@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/app_gradients.dart';
+import '../../../../core/constants/app_icons.dart';
 import '../../../../core/di/injection.dart';
-import '../../domain/entities/delivery.dart';
+import '../../domain/entities/tour_entity.dart';
 import '../bloc/tour_cubit.dart';
 
 class TourScreen extends StatelessWidget {
@@ -26,204 +27,365 @@ class TourView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Mes Tournées'),
-        centerTitle: false,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.filter_list_rounded),
-            onPressed: () {
-              // TODO: Afficher le filtre
-            },
+      backgroundColor: AppColors.background,
+      body: Column(
+        children: [
+          // ── Header fixe gradient vert ──────────────────────────────────────
+          Container(
+            decoration: const BoxDecoration(
+              gradient: AppGradients.primaryHeader,
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(28),
+                bottomRight: Radius.circular(28),
+              ),
+            ),
+            child: SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 12, 8, 20),
+                child: Row(
+                  children: [
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Mes Tournées',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 22,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            'Suivi de vos trajets de livraison',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Bouton filtre
+                    BlocBuilder<TourCubit, TourState>(
+                      builder: (context, state) => IconButton(
+                        icon: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withAlpha(30),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(
+                            AppIcons.filter,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                        onPressed: () {
+                          // TODO: Afficher le filtre
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          // ── Liste des tournées ─────────────────────────────────────────────
+          Expanded(
+            child: BlocBuilder<TourCubit, TourState>(
+              builder: (context, state) {
+                if (state is TourLoading || state is TourInitial) {
+                  return const Center(
+                    child: CircularProgressIndicator(
+                      color: AppColors.primary,
+                    ),
+                  );
+                }
+
+                if (state is TourError) {
+                  return Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          AppIcons.error,
+                          color: AppColors.error,
+                          size: 48,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Erreur : ${state.message}',
+                          style: const TextStyle(color: AppColors.error),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                if (state is TourLoaded) {
+                  final tours = state.tours;
+                  if (tours.isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            AppIcons.truck,
+                            size: 64,
+                            color: AppColors.textSecondary.withAlpha(80),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Aucune tournée pour le moment.',
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyLarge
+                                ?.copyWith(color: AppColors.textSecondary),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  return RefreshIndicator(
+                    color: AppColors.primary,
+                    onRefresh: () async =>
+                        context.read<TourCubit>().fetchTours(),
+                    child: ListView.separated(
+                      padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
+                      itemCount: tours.length,
+                      separatorBuilder: (context, index) =>
+                          const SizedBox(height: 14),
+                      itemBuilder: (context, index) =>
+                          _TourCard(tour: tours[index]),
+                    ),
+                  );
+                }
+
+                return const SizedBox.shrink();
+              },
+            ),
           ),
         ],
-      ),
-      body: BlocBuilder<TourCubit, TourState>(
-        builder: (context, state) {
-          if (state is TourLoading || state is TourInitial) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (state is TourError) {
-            return Center(child: Text('Erreur: ${state.message}'));
-          }
-          if (state is TourLoaded) {
-            final tours = state.tours;
-            if (tours.isEmpty) {
-              return const Center(
-                child: Text('Aucune tournée pour le moment.'),
-              );
-            }
-            return RefreshIndicator(
-              onRefresh: () async {
-                context.read<TourCubit>().fetchTours();
-              },
-              child: ListView.separated(
-                padding: const EdgeInsets.all(24.0),
-                itemCount: tours.length,
-                separatorBuilder: (context, index) =>
-                    const SizedBox(height: 16),
-                itemBuilder: (context, index) {
-                  final delivery = tours[index];
-                  return _DeliveryCard(delivery: delivery);
-                },
-              ),
-            );
-          }
-          return const SizedBox.shrink();
-        },
       ),
     );
   }
 }
 
-class _DeliveryCard extends StatelessWidget {
-  final Delivery delivery;
-
-  const _DeliveryCard({required this.delivery});
+// ─── Card d'une tournée ───────────────────────────────────────────────────────
+class _TourCard extends StatelessWidget {
+  final TourEntity tour;
+  const _TourCard({required this.tour});
 
   @override
   Widget build(BuildContext context) {
-    final statusColor = _getStatusColor(delivery.status);
-    final statusLabel = _getStatusLabel(delivery.status);
+    final completedDeliveries =
+        tour.deliveries.where((d) => d.status.name == 'delivered').length;
+    final totalDeliveries = tour.deliveries.length;
+    final progress =
+        totalDeliveries > 0 ? completedDeliveries / totalDeliveries : 0.0;
+    final progressLabel = '$completedDeliveries/$totalDeliveries livrées';
 
-    return InkWell(
-      onTap: () {
-        context.push('/delivery-detail', extra: delivery);
-      },
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppColors.border),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.02),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  '#${delivery.id}',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey,
+    final statusColor = _statusColor(tour.status);
+    final statusBgColor = _statusBgColor(tour.status);
+    final statusLabel = _statusLabel(tour.status);
+
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(18),
+      elevation: 0,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: () => context.push('/tour-detail', extra: tour),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ── Bandeau supérieur coloré selon le statut ──────────────────
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: statusBgColor,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(18),
+                    topRight: Radius.circular(18),
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: statusColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    statusLabel,
-                    style: TextStyle(
-                      color: statusColor,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Text(
-              delivery.clientName,
-              style: Theme.of(
-                context,
-              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                const Icon(
-                  Icons.location_on_outlined,
-                  size: 16,
-                  color: Colors.grey,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    delivery.address,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodyMedium?.copyWith(color: Colors.grey[700]),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Divider(color: Colors.grey[200]),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Icon(
-                      Icons.access_time_rounded,
-                      size: 18,
-                      color: AppColors.primary,
+                    // Référence tournée
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(
+                            AppIcons.route,
+                            size: 16,
+                            color: statusColor,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          tour.reference,
+                          style: TextStyle(
+                            color: statusColor,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 8),
-                    Text(
-                      DateFormat('HH:mm').format(delivery.scheduledTime),
-                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    // Badge statut
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: statusColor.withAlpha(20),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                            color: statusColor.withAlpha(80), width: 1),
+                      ),
+                      child: Text(
+                        statusLabel,
+                        style: TextStyle(
+                          color: statusColor,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
                     ),
                   ],
                 ),
-                Icon(
-                  Icons.arrow_forward_ios_rounded,
-                  size: 16,
-                  color: Colors.grey[400],
+              ),
+
+              // ── Corps de la card ──────────────────────────────────────────
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Nom de tournée
+                    Text(
+                      'Tournée ${tour.agence}',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 16,
+                            color: AppColors.textPrimary,
+                          ),
+                    ),
+                    const SizedBox(height: 6),
+
+                    // Véhicule
+                    Row(
+                      children: [
+                        const Icon(
+                          AppIcons.car,
+                          size: 15,
+                          color: AppColors.textSecondary,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          tour.vehiclePlate,
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(color: AppColors.textSecondary),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 14),
+                    const Divider(height: 1),
+                    const SizedBox(height: 14),
+
+                    // ── Progression ──────────────────────────────────────────
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(
+                              AppIcons.truck,
+                              size: 18,
+                              color: AppColors.primary,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              progressLabel,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleSmall
+                                  ?.copyWith(fontWeight: FontWeight.w700),
+                            ),
+                          ],
+                        ),
+                        const Icon(
+                          AppIcons.chevronRight,
+                          size: 14,
+                          color: AppColors.textSecondary,
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    // Barre de progression verte
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(99),
+                      child: LinearProgressIndicator(
+                        value: progress,
+                        minHeight: 6,
+                        backgroundColor: AppColors.border,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          progress == 1.0
+                              ? AppColors.success
+                              : AppColors.primary,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Color _getStatusColor(DeliveryStatus status) {
-    switch (status) {
-      case DeliveryStatus.pending:
-        return AppColors.warning; // Jaune Muted
-      case DeliveryStatus.inProgress:
-        return Colors.blueAccent;
-      case DeliveryStatus.delivered:
-        return AppColors.primary; // LdF Green
-      case DeliveryStatus.cancelled:
-        return Colors.redAccent;
-    }
-  }
+  Color _statusColor(TourStatus s) => switch (s) {
+        TourStatus.pending    => AppColors.warning,
+        TourStatus.inProgress => AppColors.primary,
+        TourStatus.completed  => AppColors.success,
+        TourStatus.cancelled  => AppColors.error,
+      };
 
-  String _getStatusLabel(DeliveryStatus status) {
-    switch (status) {
-      case DeliveryStatus.pending:
-        return 'En attente';
-      case DeliveryStatus.inProgress:
-        return 'En cours';
-      case DeliveryStatus.delivered:
-        return 'Livré';
-      case DeliveryStatus.cancelled:
-        return 'Annulé';
-    }
-  }
+  Color _statusBgColor(TourStatus s) => switch (s) {
+        TourStatus.pending    => AppColors.warningSoft,
+        TourStatus.inProgress => AppColors.primarySoft,
+        TourStatus.completed  => AppColors.successSoft,
+        TourStatus.cancelled  => AppColors.errorSoft,
+      };
+
+  String _statusLabel(TourStatus s) => switch (s) {
+        TourStatus.pending    => 'Programmée',
+        TourStatus.inProgress => 'En cours',
+        TourStatus.completed  => 'Terminée',
+        TourStatus.cancelled  => 'Annulée',
+      };
 }

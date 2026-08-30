@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import '../../../../core/constants/app_icons.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/di/injection.dart';
+import '../../../../core/network/token_manager.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -22,11 +25,11 @@ class ProfileScreen extends StatelessWidget {
             const CircleAvatar(
               radius: 50,
               backgroundColor: AppColors.primary,
-              child: Icon(Icons.person, size: 50, color: Colors.white),
+              child: Icon(AppIcons.person, size: 50, color: Colors.white),
             ),
             const SizedBox(height: 16),
             Text(
-              'Kouassi Fabrice',
+              getIt<TokenManager>().getUserName() ?? 'Livreur LDF',
               style: Theme.of(
                 context,
               ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
@@ -38,16 +41,14 @@ class ProfileScreen extends StatelessWidget {
             // Options
             _buildProfileOption(
               context,
-              icon: Icons.history_rounded,
+              icon: AppIcons.history,
               title: 'Historique des livraisons',
-              onTap: () {
-                // TODO: Naviguer vers l'historique
-              },
+              onTap: () => context.push('/history'),
             ),
             const Divider(height: 1),
             _buildProfileOption(
               context,
-              icon: Icons.settings_rounded,
+              icon: AppIcons.settings,
               title: 'Paramètres du compte',
               onTap: () {
                 // TODO: Naviguer vers les paramètres
@@ -56,7 +57,7 @@ class ProfileScreen extends StatelessWidget {
             const Divider(height: 1),
             _buildProfileOption(
               context,
-              icon: Icons.help_outline_rounded,
+              icon: AppIcons.help,
               title: 'Support technique',
               onTap: () {
                 // TODO: Contacter le support
@@ -71,11 +72,13 @@ class ProfileScreen extends StatelessWidget {
                 side: const BorderSide(color: Colors.redAccent),
                 foregroundColor: Colors.redAccent,
               ),
-              onPressed: () {
-                // TODO: Logique de déconnexion via BLoC/AuthRepository
-                context.go('/login');
+              onPressed: () async {
+                await getIt<TokenManager>().clearSession();
+                if (context.mounted) {
+                  context.go('/login');
+                }
               },
-              icon: const Icon(Icons.logout_rounded),
+              icon: const Icon(AppIcons.logout),
               label: const Text(
                 'Se déconnecter',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -105,7 +108,7 @@ class ProfileScreen extends StatelessWidget {
       ),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
       trailing: const Icon(
-        Icons.arrow_forward_ios_rounded,
+        AppIcons.chevronRight,
         size: 16,
         color: Colors.grey,
       ),

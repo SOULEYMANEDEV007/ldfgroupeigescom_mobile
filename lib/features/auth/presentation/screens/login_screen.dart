@@ -3,7 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/app_gradients.dart';
 import '../../../../core/di/injection.dart';
+import '../../../../core/utils/app_feedback.dart';
 import '../bloc/login_bloc.dart';
 
 class LoginScreen extends StatelessWidget {
@@ -25,206 +27,216 @@ class LoginView extends StatefulWidget {
   State<LoginView> createState() => _LoginViewState();
 }
 
-class _LoginViewState extends State<LoginView>
-    with SingleTickerProviderStateMixin {
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
+class _LoginViewState extends State<LoginView> {
+  final _matriculeController = TextEditingController(text: 'LDF-999');
+  final _passwordController = TextEditingController(text: '123');
+
   bool _isPasswordVisible = false;
+  String? _selectedAgence;
+
+  final List<String> _agences = [
+    'LDF-Plateau',
+    'LDF-Cocody',
+    'LDF-Yopougon',
+    'LDF-Koumassi',
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.navBarYellow,
       body: BlocConsumer<LoginBloc, LoginState>(
         listener: (context, state) {
           if (state is LoginFailure) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(state.message),
-                backgroundColor: AppColors.error,
-                behavior: SnackBarBehavior.floating,
-                margin: const EdgeInsets.all(16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-            );
+            AppFeedback.error(context, state.message);
           } else if (state is LoginSuccess) {
             context.go('/dashboard');
           }
         },
         builder: (context, state) {
-          return Stack(
+          return Column(
             children: [
-              // 1. Fond décoratif (Creative UX)
-              Positioned(
-                top: -100,
-                right: -50,
-                child: Container(
-                  width: 300,
-                  height: 300,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: AppColors.primary.withValues(alpha: 0.05),
-                  ),
-                ),
-              ),
-              Positioned(
-                top: 50,
-                left: -80,
-                child: Container(
-                  width: 200,
-                  height: 200,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: AppColors.secondary.withValues(alpha: 0.05),
-                  ),
-                ),
-              ),
-
-              // 2. Contenu Principal
-              SafeArea(
-                child: Center(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              // ── Header Jaune (logo + tagline) ──────────────────────────
+              Container(
+                decoration: const BoxDecoration(gradient: AppGradients.yellow),
+                child: SafeArea(
+                  bottom: false,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // Logo ou Header Typographique
-                        const Icon(
-                          Icons.local_shipping_rounded,
-                          size: 80,
-                          color: AppColors.primary,
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(22),
+                          child: Image.asset(
+                            'assets/logo/ldfgroupe-icon-app.webp',
+                            width: 80,
+                            height: 80,
+                            fit: BoxFit.cover,
+                          ),
                         ),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 16),
                         Text(
-                          'Bienvenue sur\nIgescom Mobile',
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.displayLarge
+                          'Igescom Mobile',
+                          style: Theme.of(context).textTheme.titleLarge
                               ?.copyWith(
-                                fontSize: 32,
+                                color: AppColors.primaryDark,
                                 fontWeight: FontWeight.w800,
-                                color: AppColors.primary,
                               ),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 4),
                         Text(
                           'Espace Livreur',
-                          textAlign: TextAlign.center,
                           style: Theme.of(context).textTheme.bodyMedium
                               ?.copyWith(
-                                fontSize: 16,
-                                color: AppColors.secondary, // Accent jaune
-                                fontWeight: FontWeight.bold,
+                                color: AppColors.primaryDark.withValues(
+                                  alpha: 0.6,
+                                ),
+                                fontWeight: FontWeight.w500,
                               ),
                         ),
-                        const SizedBox(height: 48),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
 
-                        // Formulaire (Card "Glassmorphism" ou claire)
-                        Container(
-                          padding: const EdgeInsets.all(24),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(24),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.primary.withValues(
-                                  alpha: 0.04,
-                                ),
-                                blurRadius: 24,
-                                offset: const Offset(0, 8),
-                              ),
-                            ],
+              // ── Formulaire (fond gris arrondi sur le haut, non scrollable) ───
+              Expanded(
+                child: Container(
+                  decoration: const BoxDecoration(
+                    color: AppColors.background,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(32),
+                      topRight: Radius.circular(32),
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Text(
+                          'Connexion',
+                          style: Theme.of(context).textTheme.headlineMedium
+                              ?.copyWith(color: AppColors.textPrimary),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Connectez-vous avec vos identifiants LdF',
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                        const SizedBox(height: 32),
+
+                        // ── Matricule ─────────────────────────────────────
+                        TextFormField(
+                          controller: _matriculeController,
+                          keyboardType: TextInputType.text,
+                          textCapitalization: TextCapitalization.characters,
+                          decoration: const InputDecoration(
+                            labelText: 'Matricule',
+                            hintText: 'Ex : LDF-023',
+                            prefixIcon: Icon(Icons.badge_outlined),
                           ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              Text(
-                                "Connexion",
-                                style: Theme.of(context).textTheme.titleLarge
-                                    ?.copyWith(fontWeight: FontWeight.w700),
-                              ),
-                              const SizedBox(height: 24),
+                        ),
+                        const SizedBox(height: 16),
 
-                              TextFormField(
-                                controller: _emailController,
-                                keyboardType: TextInputType.emailAddress,
-                                decoration: const InputDecoration(
-                                  labelText: 'Adresse Email',
-                                  hintText: 'livreur@ldf.ci',
-                                  prefixIcon: Icon(Icons.email_outlined),
-                                ),
+                        // ── Mot de passe ──────────────────────────────────
+                        TextFormField(
+                          controller: _passwordController,
+                          obscureText: !_isPasswordVisible,
+                          decoration: InputDecoration(
+                            labelText: 'Mot de passe',
+                            hintText: '••••••••',
+                            prefixIcon: const Icon(Icons.lock_outline),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _isPasswordVisible
+                                    ? Icons.visibility_off_outlined
+                                    : Icons.visibility_outlined,
                               ),
-                              const SizedBox(height: 16),
+                              onPressed: () => setState(
+                                () => _isPasswordVisible = !_isPasswordVisible,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
 
-                              TextFormField(
-                                controller: _passwordController,
-                                obscureText: !_isPasswordVisible,
-                                decoration: InputDecoration(
-                                  labelText: 'Mot de passe',
-                                  hintText: 'Votre mot de passe',
-                                  prefixIcon: const Icon(Icons.lock_outline),
-                                  suffixIcon: IconButton(
-                                    icon: Icon(
-                                      _isPasswordVisible
-                                          ? Icons.visibility_off_outlined
-                                          : Icons.visibility_outlined,
+                        // ── Agence (Dropdown) ──────────────────────────────
+                        DropdownButtonFormField<String>(
+                          decoration: const InputDecoration(
+                            labelText: 'Agence',
+                            prefixIcon: Icon(Icons.business_outlined),
+                          ),
+                          // ignore: deprecated_member_use
+                          value: _selectedAgence,
+                          hint: const Text('Sélectionnez votre agence'),
+                          items: _agences.map((agence) {
+                            return DropdownMenuItem<String>(
+                              value: agence,
+                              child: Text(agence),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              _selectedAgence = value;
+                            });
+                          },
+                        ),
+
+                        const SizedBox(height: 10),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: () {},
+                            child: const Text(
+                              'Mot de passe oublié ?',
+                              style: TextStyle(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        const Spacer(),
+
+                        // ── Bouton SE CONNECTER ───────────────────────────
+                        ElevatedButton(
+                          onPressed: state is LoginLoading
+                              ? null
+                              : () {
+                                  context.read<LoginBloc>().add(
+                                    LoginSubmitted(
+                                      _matriculeController.text.trim(),
+                                      _selectedAgence ?? '',
+                                      _passwordController.text,
                                     ),
-                                    onPressed: () {
-                                      setState(() {
-                                        _isPasswordVisible =
-                                            !_isPasswordVisible;
-                                      });
-                                    },
-                                  ),
-                                ),
-                              ),
-
-                              const SizedBox(height: 12),
-                              Align(
-                                alignment: Alignment.centerRight,
-                                child: TextButton(
-                                  onPressed: () {
-                                    // Mot de passe oublié (Mock)
-                                  },
-                                  child: Text(
-                                    'Mot de passe oublié ?',
-                                    style: TextStyle(
-                                      color: AppColors.textSecondary,
-                                      fontWeight: FontWeight.w500,
+                                  );
+                                },
+                          child: state is LoginLoading
+                              ? const SizedBox(
+                                  height: 22,
+                                  width: 22,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.5,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white,
                                     ),
                                   ),
-                                ),
-                              ),
+                                )
+                              : const Text('SE CONNECTER'),
+                        ),
 
-                              const SizedBox(height: 24),
+                        const SizedBox(height: 40),
 
-                              ElevatedButton(
-                                onPressed: state is LoginLoading
-                                    ? null
-                                    : () {
-                                        context.read<LoginBloc>().add(
-                                          LoginSubmitted(
-                                            _emailController.text,
-                                            _passwordController.text,
-                                          ),
-                                        );
-                                      },
-                                child: state is LoginLoading
-                                    ? const SizedBox(
-                                        height: 24,
-                                        width: 24,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2.5,
-                                          valueColor:
-                                              AlwaysStoppedAnimation<Color>(
-                                                Colors.white,
-                                              ),
-                                        ),
-                                      )
-                                    : const Text('Se Connecter'),
-                              ),
-                            ],
+                        Center(
+                          child: Text(
+                            '© LdF Groupe CI — Igescom v1.0',
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodyMedium?.copyWith(fontSize: 11),
                           ),
                         ),
                       ],
@@ -241,7 +253,7 @@ class _LoginViewState extends State<LoginView>
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _matriculeController.dispose();
     _passwordController.dispose();
     super.dispose();
   }

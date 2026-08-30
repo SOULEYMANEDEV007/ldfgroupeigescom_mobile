@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'core/routing/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'core/di/injection.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Initialiser les données de localisation (nécessaire pour DateFormat avec locale)
+  await initializeDateFormatting('fr_FR');
+
   // Initialisation de l'injection de dépendances (DI) via get_it et injectable
-  configureDependencies();
+  await configureDependencies();
 
   runApp(const LdfMobileApp());
 }

@@ -11,10 +11,14 @@ class LoginUseCase {
 
   LoginUseCase(this.repository);
 
-  Future<Either<String, User>> call(String email, String password) {
-    if (email.isEmpty || password.isEmpty) {
+  Future<Either<String, User>> call(
+    String matricule,
+    String agence,
+    String password,
+  ) {
+    if (matricule.isEmpty || agence.isEmpty || password.isEmpty) {
       return Future.value(const Left("Veuillez remplir tous les champs."));
     }
-    return repository.login(email, password);
+    return repository.login(matricule, agence, password);
   }
 }

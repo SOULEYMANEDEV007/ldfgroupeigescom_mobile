@@ -12,7 +12,7 @@ class TourInitial extends TourState {}
 class TourLoading extends TourState {}
 
 class TourLoaded extends TourState {
-  final List<Delivery> tours;
+  final List<TourEntity> tours;
 
   const TourLoaded(this.tours);
 
