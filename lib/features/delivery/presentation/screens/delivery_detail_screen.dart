@@ -54,6 +54,11 @@ class _DeliveryDetailView extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // ── Timeline de suivi ────────────────────────────
+
+                    _sectionLabel('Suivi de la livraison'),
+                    const SizedBox(height: 10),
+                    _StatusTimeline(status: delivery.status),
                     _InfoStrip(delivery: delivery),
                     _MapSection(delivery: delivery),
                     Padding(
@@ -71,8 +76,9 @@ class _DeliveryDetailView extends StatelessWidget {
                                   iconColor: AppColors.accentBlue,
                                   iconBgColor: AppColors.accentBlueSoft,
                                   label: 'Heure prévue',
-                                  value: DateFormat('HH:mm')
-                                      .format(delivery.scheduledTime),
+                                  value: DateFormat(
+                                    'HH:mm',
+                                  ).format(delivery.scheduledTime),
                                 ),
                               ),
                               const SizedBox(width: 10),
@@ -116,12 +122,6 @@ class _DeliveryDetailView extends StatelessWidget {
                             ],
                           ),
 
-                          // ── Timeline de suivi ────────────────────────────
-                          const SizedBox(height: 20),
-                          _sectionLabel('Suivi de la livraison'),
-                          const SizedBox(height: 10),
-                          _StatusTimeline(status: delivery.status),
-
                           if (delivery.notes.isNotEmpty) ...[
                             const SizedBox(height: 16),
                             _sectionLabel('Notes du client'),
@@ -133,14 +133,17 @@ class _DeliveryDetailView extends StatelessWidget {
                                 color: Colors.amber.withAlpha(20),
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(
-                                    color: Colors.amber.withAlpha(80)),
+                                  color: Colors.amber.withAlpha(80),
+                                ),
                               ),
                               child: Row(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Icon(AppIcons.note,
-                                      color: Colors.amber, size: 18),
+                                  const Icon(
+                                    AppIcons.note,
+                                    color: Colors.amber,
+                                    size: 18,
+                                  ),
                                   const SizedBox(width: 10),
                                   Expanded(
                                     child: Text(
@@ -159,16 +162,20 @@ class _DeliveryDetailView extends StatelessWidget {
                           SizedBox(
                             width: double.infinity,
                             child: OutlinedButton.icon(
-                              onPressed: () =>
-                                  context.push('/delivery-note'),
+                              onPressed: () => context.push(
+                                '/delivery-note',
+                                extra: delivery,
+                              ),
                               icon: const Icon(AppIcons.pdf, size: 18),
                               label: const Text('Voir le Bon de Livraison'),
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: AppColors.primary,
                                 side: const BorderSide(
-                                    color: AppColors.primary),
+                                  color: AppColors.primary,
+                                ),
                                 padding: const EdgeInsets.symmetric(
-                                    vertical: 14),
+                                  vertical: 14,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
@@ -191,14 +198,14 @@ class _DeliveryDetailView extends StatelessWidget {
   }
 
   Widget _sectionLabel(String label) => Text(
-        label.toUpperCase(),
-        style: const TextStyle(
-          color: AppColors.textSecondary,
-          fontWeight: FontWeight.bold,
-          fontSize: 11,
-          letterSpacing: 1.2,
-        ),
-      );
+    label.toUpperCase(),
+    style: const TextStyle(
+      color: AppColors.textSecondary,
+      fontWeight: FontWeight.bold,
+      fontSize: 11,
+      letterSpacing: 1.2,
+    ),
+  );
 }
 
 // ─── Header ───────────────────────────────────────────────────────────────────
@@ -221,8 +228,11 @@ class _DeliveryHeader extends StatelessWidget {
                 children: [
                   IconButton(
                     onPressed: () => context.pop(),
-                    icon: const Icon(AppIcons.back,
-                        color: Colors.white, size: 22),
+                    icon: const Icon(
+                      AppIcons.back,
+                      color: Colors.white,
+                      size: 22,
+                    ),
                   ),
                   const Expanded(
                     child: Text(
@@ -244,8 +254,11 @@ class _DeliveryHeader extends StatelessWidget {
                         color: AppColors.navBarYellow,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(AppIcons.phoneCall,
-                          size: 20, color: AppColors.primaryDark),
+                      child: const Icon(
+                        AppIcons.phoneCall,
+                        size: 20,
+                        color: AppColors.primaryDark,
+                      ),
                     ),
                   ),
                 ],
@@ -262,8 +275,11 @@ class _DeliveryHeader extends StatelessWidget {
                         color: Colors.white.withAlpha(30),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(AppIcons.person,
-                          color: Colors.white, size: 24),
+                      child: const Icon(
+                        AppIcons.person,
+                        color: Colors.white,
+                        size: 24,
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -291,9 +307,11 @@ class _DeliveryHeader extends StatelessWidget {
                           const SizedBox(height: 4),
                           Row(
                             children: [
-                              const Icon(AppIcons.mapPin,
-                                  size: 13,
-                                  color: AppColors.navBarYellow),
+                              const Icon(
+                                AppIcons.mapPin,
+                                size: 13,
+                                color: AppColors.navBarYellow,
+                              ),
                               const SizedBox(width: 4),
                               Expanded(
                                 child: Text(
@@ -311,9 +329,11 @@ class _DeliveryHeader extends StatelessWidget {
                           const SizedBox(height: 2),
                           Row(
                             children: [
-                              const Icon(AppIcons.phone,
-                                  size: 13,
-                                  color: AppColors.navBarYellow),
+                              const Icon(
+                                AppIcons.phone,
+                                size: 13,
+                                color: AppColors.navBarYellow,
+                              ),
                               const SizedBox(width: 4),
                               Text(
                                 delivery.phone,
@@ -346,14 +366,26 @@ class _InfoStrip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (statusLabel, statusColor, statusBg) = switch (delivery.status) {
-      DeliveryStatus.pending =>
-        ('En attente', AppColors.warning, AppColors.warningSoft),
-      DeliveryStatus.inProgress =>
-        ('En cours', AppColors.accentBlue, AppColors.accentBlueSoft),
-      DeliveryStatus.delivered =>
-        ('Livré ✓', AppColors.success, AppColors.successSoft),
-      DeliveryStatus.cancelled =>
-        ('Annulé', AppColors.error, AppColors.errorSoft),
+      DeliveryStatus.pending => (
+        'En attente',
+        AppColors.warning,
+        AppColors.warningSoft,
+      ),
+      DeliveryStatus.inProgress => (
+        'En cours',
+        AppColors.accentBlue,
+        AppColors.accentBlueSoft,
+      ),
+      DeliveryStatus.delivered => (
+        'Livré ✓',
+        AppColors.success,
+        AppColors.successSoft,
+      ),
+      DeliveryStatus.cancelled => (
+        'Annulé',
+        AppColors.error,
+        AppColors.errorSoft,
+      ),
     };
 
     return Container(
@@ -365,9 +397,10 @@ class _InfoStrip extends StatelessWidget {
         border: Border.all(color: AppColors.border),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withAlpha(6),
-              blurRadius: 8,
-              offset: const Offset(0, 3)),
+            color: Colors.black.withAlpha(6),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
         ],
       ),
       child: Row(
@@ -376,17 +409,22 @@ class _InfoStrip extends StatelessWidget {
             child: _StripItem(
               label: 'État',
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: statusBg,
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: Text(statusLabel,
-                    style: TextStyle(
-                        color: statusColor,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 11)),
+                child: Text(
+                  statusLabel,
+                  style: TextStyle(
+                    color: statusColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 11,
+                  ),
+                ),
               ),
             ),
           ),
@@ -397,7 +435,10 @@ class _InfoStrip extends StatelessWidget {
               child: Text(
                 DateFormat('dd/MM/yy\nHH:mm').format(delivery.scheduledTime),
                 style: const TextStyle(
-                    fontWeight: FontWeight.w700, fontSize: 12, height: 1.4),
+                  fontWeight: FontWeight.w700,
+                  fontSize: 12,
+                  height: 1.4,
+                ),
               ),
             ),
           ),
@@ -408,7 +449,9 @@ class _InfoStrip extends StatelessWidget {
               child: Text(
                 '${delivery.weight} kg',
                 style: const TextStyle(
-                    fontWeight: FontWeight.w700, fontSize: 12),
+                  fontWeight: FontWeight.w700,
+                  fontSize: 12,
+                ),
               ),
             ),
           ),
@@ -428,11 +471,14 @@ class _StripItem extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label,
-            style: const TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 10,
-                fontWeight: FontWeight.w500)),
+        Text(
+          label,
+          style: const TextStyle(
+            color: AppColors.textSecondary,
+            fontSize: 10,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
         const SizedBox(height: 4),
         child,
       ],
@@ -468,9 +514,10 @@ class _MapSection extends StatelessWidget {
         border: Border.all(color: AppColors.border),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withAlpha(10),
-              blurRadius: 10,
-              offset: const Offset(0, 4)),
+            color: Colors.black.withAlpha(10),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
       clipBehavior: Clip.antiAlias,
@@ -486,8 +533,7 @@ class _MapSection extends StatelessWidget {
             ),
             children: [
               TileLayer(
-                urlTemplate:
-                    'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                 userAgentPackageName: 'com.ldf.igescom_mobile',
               ),
               MarkerLayer(
@@ -502,13 +548,17 @@ class _MapSection extends StatelessWidget {
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                              color: Colors.black26,
-                              blurRadius: 8,
-                              offset: Offset(0, 3)),
+                            color: Colors.black26,
+                            blurRadius: 8,
+                            offset: Offset(0, 3),
+                          ),
                         ],
                       ),
-                      child: const Icon(AppIcons.truck,
-                          color: Colors.white, size: 24),
+                      child: const Icon(
+                        AppIcons.truck,
+                        color: Colors.white,
+                        size: 24,
+                      ),
                     ),
                   ),
                 ],
@@ -520,30 +570,30 @@ class _MapSection extends StatelessWidget {
             left: 0,
             right: 0,
             child: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.bottomCenter,
                   end: Alignment.topCenter,
-                  colors: [
-                    Colors.black.withAlpha(160),
-                    Colors.transparent,
-                  ],
+                  colors: [Colors.black.withAlpha(160), Colors.transparent],
                 ),
               ),
               child: Row(
                 children: [
-                  const Icon(AppIcons.mapPin,
-                      color: AppColors.navBarYellow, size: 15),
+                  const Icon(
+                    AppIcons.mapPin,
+                    color: AppColors.navBarYellow,
+                    size: 15,
+                  ),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
                       delivery.address,
                       style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600),
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -583,9 +633,10 @@ class _KpiCard extends StatelessWidget {
         border: Border.all(color: AppColors.border),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withAlpha(5),
-              blurRadius: 8,
-              offset: const Offset(0, 3)),
+            color: Colors.black.withAlpha(5),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
         ],
       ),
       child: Column(
@@ -600,19 +651,22 @@ class _KpiCard extends StatelessWidget {
             child: Icon(icon, color: iconColor, size: 16),
           ),
           const SizedBox(height: 10),
-          Text(label,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppColors.textSecondary,
-                    fontWeight: FontWeight.w500,
-                  )),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: AppColors.textSecondary,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
           const SizedBox(height: 3),
-          Text(value,
-              style: Theme.of(context)
-                  .textTheme
-                  .titleSmall
-                  ?.copyWith(fontWeight: FontWeight.bold),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis),
+          Text(
+            value,
+            style: Theme.of(
+              context,
+            ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
         ],
       ),
     );
@@ -636,42 +690,53 @@ class _StickyActionBar extends StatelessWidget {
         }
 
         return Container(
-          padding: EdgeInsets.fromLTRB(16, 12, 16,
-              MediaQuery.of(context).padding.bottom + 12),
+          padding: EdgeInsets.fromLTRB(
+            16,
+            12,
+            16,
+            MediaQuery.of(context).padding.bottom + 12,
+          ),
           decoration: BoxDecoration(
             color: Colors.white,
             boxShadow: [
               BoxShadow(
-                  color: Colors.black.withAlpha(18),
-                  blurRadius: 16,
-                  offset: const Offset(0, -3)),
+                color: Colors.black.withAlpha(18),
+                blurRadius: 16,
+                offset: const Offset(0, -3),
+              ),
             ],
           ),
           child: delivery.status == DeliveryStatus.pending
               ? ElevatedButton.icon(
                   onPressed: isLoading
                       ? null
-                      : () => context
-                          .read<DeliveryCubit>()
-                          .startDelivery(delivery),
+                      : () => context.read<DeliveryCubit>().startDelivery(
+                          delivery,
+                        ),
                   icon: isLoading
                       ? const SizedBox(
                           width: 18,
                           height: 18,
                           child: CircularProgressIndicator(
-                              strokeWidth: 2, color: Colors.white))
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
                       : const Icon(AppIcons.play),
-                  label: Text(isLoading
-                      ? 'Démarrage...'
-                      : 'Démarrer la livraison'),
+                  label: Text(
+                    isLoading ? 'Démarrage...' : 'Démarrer la livraison',
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.navBarYellow,
                     foregroundColor: AppColors.primaryDark,
                     minimumSize: const Size(double.infinity, 54),
                     textStyle: const TextStyle(
-                        fontWeight: FontWeight.bold, fontSize: 15),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14)),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                   ),
                 )
               : Row(
@@ -679,20 +744,27 @@ class _StickyActionBar extends StatelessWidget {
                     OutlinedButton.icon(
                       onPressed: isLoading
                           ? null
-                          : () => context.push('/delivery-failure',
-                              extra: delivery),
+                          : () => context.push(
+                              '/delivery-failure',
+                              extra: delivery,
+                            ),
                       icon: const Icon(AppIcons.alertTriangle, size: 17),
                       label: const Text('Signaler'),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.error,
                         side: const BorderSide(
-                            color: AppColors.error, width: 1.5),
+                          color: AppColors.error,
+                          width: 1.5,
+                        ),
                         minimumSize: const Size(0, 54),
                         padding: const EdgeInsets.symmetric(horizontal: 18),
                         textStyle: const TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 13),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14)),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -700,16 +772,21 @@ class _StickyActionBar extends StatelessWidget {
                       child: ElevatedButton.icon(
                         onPressed: isLoading
                             ? null
-                            : () => context.push('/delivery-validation',
-                                extra: delivery),
+                            : () => context.push(
+                                '/delivery-validation',
+                                extra: delivery,
+                              ),
                         icon: const Icon(AppIcons.checkCircle, size: 18),
                         label: const Text('Confirmer comme Livré'),
                         style: ElevatedButton.styleFrom(
                           minimumSize: const Size(0, 54),
                           textStyle: const TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 13),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14)),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
                         ),
                       ),
                     ),
@@ -728,11 +805,11 @@ class _StatusTimeline extends StatelessWidget {
 
   // Retourne l'index courant de l'étape (0, 1, 2) ou -1 si annulé
   int get _stepIndex => switch (status) {
-        DeliveryStatus.pending    => 0,
-        DeliveryStatus.inProgress => 1,
-        DeliveryStatus.delivered  => 2,
-        DeliveryStatus.cancelled  => -1,
-      };
+    DeliveryStatus.pending => 0,
+    DeliveryStatus.inProgress => 1,
+    DeliveryStatus.delivered => 2,
+    DeliveryStatus.cancelled => -1,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -753,17 +830,20 @@ class _StatusTimeline extends StatelessWidget {
                 color: AppColors.error.withAlpha(20),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(AppIcons.cancelled,
-                  color: AppColors.error, size: 18),
+              child: const Icon(
+                AppIcons.cancelled,
+                color: AppColors.error,
+                size: 18,
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
                 'Livraison annulée',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppColors.error,
-                      fontWeight: FontWeight.w700,
-                    ),
+                  color: AppColors.error,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           ],
@@ -773,9 +853,9 @@ class _StatusTimeline extends StatelessWidget {
 
     // ── Étapes ────────────────────────────────────────────────────────────
     const steps = [
-      (AppIcons.pending,      'En attente',  'Programmée'),
-      (AppIcons.truck,        'En transit',  'Prise en charge'),
-      (AppIcons.packageCheck, 'Livré',       'Confirmée'),
+      (AppIcons.pending, 'En attente', 'Programmée'),
+      (AppIcons.truck, 'En transit', 'Prise en charge'),
+      (AppIcons.packageCheck, 'Livré', 'Confirmée'),
     ];
 
     final current = _stepIndex;
@@ -788,9 +868,10 @@ class _StatusTimeline extends StatelessWidget {
         border: Border.all(color: AppColors.border),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withAlpha(5),
-              blurRadius: 8,
-              offset: const Offset(0, 3)),
+            color: Colors.black.withAlpha(5),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
         ],
       ),
       child: Row(
@@ -817,13 +898,15 @@ class _StatusTimeline extends StatelessWidget {
 
           // ── Nœud d'étape ──────────────────────────────────────────────
           final idx = i ~/ 2;
-          final isDone    = current >= idx;
+          final isDone = current >= idx;
           final isCurrent = current == idx;
           final (icon, title, subtitle) = steps[idx];
 
-          final nodeColor   = isDone ? AppColors.primary : AppColors.border;
-          final iconColor   = isDone ? Colors.white : AppColors.textSecondary;
-          final titleColor  = isDone ? AppColors.primary : AppColors.textSecondary;
+          final nodeColor = isDone ? AppColors.primary : AppColors.border;
+          final iconColor = isDone ? Colors.white : AppColors.textSecondary;
+          final titleColor = isDone
+              ? AppColors.primary
+              : AppColors.textSecondary;
 
           return Column(
             mainAxisSize: MainAxisSize.min,
@@ -845,7 +928,7 @@ class _StatusTimeline extends StatelessWidget {
                             color: AppColors.primary.withAlpha(60),
                             blurRadius: 8,
                             offset: const Offset(0, 2),
-                          )
+                          ),
                         ]
                       : null,
                 ),

@@ -4,8 +4,9 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_gradients.dart';
+import '../../../../core/constants/app_icons.dart';
 import '../../../../core/di/injection.dart';
-import '../../../../core/utils/app_feedback.dart';
+import '../../../../core/utils/app_dialogs.dart';
 import '../../domain/entities/delivery.dart';
 import '../bloc/delivery_cubit.dart';
 
@@ -31,6 +32,7 @@ class _DeliveryFailureView extends StatefulWidget {
 }
 
 class _DeliveryFailureViewState extends State<_DeliveryFailureView> {
+  final _formKey = GlobalKey<FormState>();
   final _reasonController = TextEditingController();
 
   @override
@@ -38,14 +40,14 @@ class _DeliveryFailureViewState extends State<_DeliveryFailureView> {
     return BlocListener<DeliveryCubit, DeliveryState>(
       listener: (context, state) {
         if (state is DeliveryUpdated) {
-          AppFeedback.warning(
+          AppDialogs.showSuccessDialog(
             context,
             'Échec signalé pour la commande #${widget.delivery.id}.',
+            onConfirm: () => context.go('/dashboard'),
           );
-          context.go('/dashboard');
         }
         if (state is DeliveryUpdateError) {
-          AppFeedback.error(context, state.message);
+          AppDialogs.showErrorDialog(context, state.message);
         }
       },
       child: Scaffold(
@@ -85,7 +87,7 @@ class _DeliveryFailureViewState extends State<_DeliveryFailureView> {
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
-                    Icons.warning_amber_rounded,
+                    AppIcons.warning,
                     size: 64,
                     color: Colors.white,
                   ),
@@ -120,25 +122,33 @@ class _DeliveryFailureViewState extends State<_DeliveryFailureView> {
                         topRight: Radius.circular(32),
                       ),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Text(
-                          'Raison de l\'échec',
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(fontWeight: FontWeight.w700),
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _reasonController,
-                          maxLines: 4,
-                          decoration: const InputDecoration(
-                            hintText:
-                                'Expliquez brièvement pourquoi la livraison n\'a pas pu être effectuée (ex: Client absent).',
-                            alignLabelWithHint: true,
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            'Raison de l\'échec',
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w700),
                           ),
-                        ),
-                        const SizedBox(height: 24),
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            controller: _reasonController,
+                            maxLines: 4,
+                            decoration: const InputDecoration(
+                              hintText:
+                                  'Expliquez brièvement pourquoi la livraison n\'a pas pu être effectuée (ex: Client absent).',
+                              alignLabelWithHint: true,
+                            ),
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return 'La raison de l\'échec est requise';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 24),
 
                         const Spacer(),
                         BlocBuilder<DeliveryCubit, DeliveryState>(
@@ -151,9 +161,11 @@ class _DeliveryFailureViewState extends State<_DeliveryFailureView> {
                               onPressed: isLoading
                                   ? null
                                   : () {
-                                      context
-                                          .read<DeliveryCubit>()
-                                          .reportFailure(widget.delivery);
+                                      if (_formKey.currentState!.validate()) {
+                                        context
+                                            .read<DeliveryCubit>()
+                                            .reportFailure(widget.delivery);
+                                      }
                                     },
                               child: isLoading
                                   ? const SizedBox(
@@ -171,7 +183,7 @@ class _DeliveryFailureViewState extends State<_DeliveryFailureView> {
                         const SizedBox(height: 12),
                         TextButton(
                           onPressed: () => context.pop(),
-                          child: Text(
+                          child: const Text(
                             'Annuler',
                             style: TextStyle(
                               color: AppColors.textSecondary,
@@ -183,7 +195,8 @@ class _DeliveryFailureViewState extends State<_DeliveryFailureView> {
                     ),
                   ),
                 ),
-              ],
+              ),
+            ],
             ),
           ),
         ),

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
-import '../../../../core/constants/app_icons.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/app_icons.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/network/token_manager.dart';
+import '../../../../core/utils/app_dialogs.dart';
+import '../../../../core/utils/app_feedback.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -50,9 +52,7 @@ class ProfileScreen extends StatelessWidget {
               context,
               icon: AppIcons.settings,
               title: 'Paramètres du compte',
-              onTap: () {
-                // TODO: Naviguer vers les paramètres
-              },
+              onTap: () => context.push('/settings'),
             ),
             const Divider(height: 1),
             _buildProfileOption(
@@ -60,7 +60,10 @@ class ProfileScreen extends StatelessWidget {
               icon: AppIcons.help,
               title: 'Support technique',
               onTap: () {
-                // TODO: Contacter le support
+                AppFeedback.info(
+                  context,
+                  'Appel du support LdF (+225 27 20 00 00 00)…',
+                );
               },
             ),
             const SizedBox(height: 40),
@@ -69,19 +72,34 @@ class ProfileScreen extends StatelessWidget {
             OutlinedButton.icon(
               style: OutlinedButton.styleFrom(
                 minimumSize: const Size(double.infinity, 56),
-                side: const BorderSide(color: Colors.redAccent),
-                foregroundColor: Colors.redAccent,
+                side: const BorderSide(color: AppColors.error, width: 1.5),
+                foregroundColor: AppColors.error,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
               ),
               onPressed: () async {
-                await getIt<TokenManager>().clearSession();
-                if (context.mounted) {
-                  context.go('/login');
+                final confirmed = await AppDialogs.showConfirmationDialog(
+                  context,
+                  title: 'Déconnexion',
+                  message:
+                      'Êtes-vous sûr de vouloir vous déconnecter de votre session ? Vos données locales sont synchronisées.',
+                  confirmText: 'Se déconnecter',
+                  cancelText: 'Annuler',
+                  isDestructive: true,
+                );
+
+                if (confirmed && context.mounted) {
+                  await getIt<TokenManager>().clearSession();
+                  if (context.mounted) {
+                    context.go('/login');
+                  }
                 }
               },
               icon: const Icon(AppIcons.logout),
               label: const Text(
                 'Se déconnecter',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
               ),
             ),
           ],

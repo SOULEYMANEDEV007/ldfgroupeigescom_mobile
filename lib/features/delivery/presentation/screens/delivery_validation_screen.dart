@@ -4,8 +4,9 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_gradients.dart';
+import '../../../../core/constants/app_icons.dart';
 import '../../../../core/di/injection.dart';
-import '../../../../core/utils/app_feedback.dart';
+import '../../../../core/utils/app_dialogs.dart';
 import '../../domain/entities/delivery.dart';
 import '../bloc/delivery_cubit.dart';
 
@@ -32,6 +33,7 @@ class _DeliveryValidationView extends StatefulWidget {
 }
 
 class _DeliveryValidationViewState extends State<_DeliveryValidationView> {
+  final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
 
   @override
@@ -39,16 +41,14 @@ class _DeliveryValidationViewState extends State<_DeliveryValidationView> {
     return BlocListener<DeliveryCubit, DeliveryState>(
       listener: (context, state) {
         if (state is DeliveryUpdated) {
-          AppFeedback.success(
+          AppDialogs.showSuccessDialog(
             context,
             'Livraison #${widget.delivery.id} validée avec succès !',
+            onConfirm: () => context.go('/dashboard'),
           );
-          // Retour au dashboard (on pop 2 fois en fait si on vient du détail,
-          // ou on navigue explicitement)
-          context.go('/dashboard');
         }
         if (state is DeliveryUpdateError) {
-          AppFeedback.error(context, state.message);
+          AppDialogs.showErrorDialog(context, state.message);
         }
       },
       child: Scaffold(
@@ -82,7 +82,7 @@ class _DeliveryValidationViewState extends State<_DeliveryValidationView> {
 
                 const SizedBox(height: 16),
                 const Icon(
-                  Icons.check_circle_outline_rounded,
+                  AppIcons.checkCircle,
                   size: 80,
                   color: Colors.white,
                 ),
@@ -116,34 +116,42 @@ class _DeliveryValidationViewState extends State<_DeliveryValidationView> {
                         topRight: Radius.circular(32),
                       ),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Text(
-                          'Nom du réceptionnaire',
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(fontWeight: FontWeight.w700),
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _nameController,
-                          decoration: const InputDecoration(
-                            hintText: 'Ex: Jean Dupont',
-                            prefixIcon: Icon(Icons.person_outline_rounded),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            'Nom du réceptionnaire',
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w700),
                           ),
-                        ),
-                        const SizedBox(height: 24),
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            controller: _nameController,
+                            decoration: const InputDecoration(
+                              hintText: 'Ex: Jean Dupont',
+                              prefixIcon: Icon(AppIcons.person),
+                            ),
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return 'Ce champ est requis';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 24),
 
-                        // Bouton Photo / Signature (Mock UI)
-                        OutlinedButton.icon(
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: AppColors.textPrimary,
-                            side: const BorderSide(color: AppColors.border),
+                          // Bouton Photo / Signature (Mock UI)
+                          OutlinedButton.icon(
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppColors.textPrimary,
+                              side: const BorderSide(color: AppColors.border),
+                            ),
+                            onPressed: () {},
+                            icon: const Icon(AppIcons.camera),
+                            label: const Text('Ajouter une preuve (Optionnel)'),
                           ),
-                          onPressed: () {},
-                          icon: const Icon(Icons.camera_alt_outlined),
-                          label: const Text('Ajouter une preuve (Optionnel)'),
-                        ),
 
                         const Spacer(),
                         BlocBuilder<DeliveryCubit, DeliveryState>(
@@ -154,9 +162,11 @@ class _DeliveryValidationViewState extends State<_DeliveryValidationView> {
                               onPressed: isLoading
                                   ? null
                                   : () {
-                                      context
-                                          .read<DeliveryCubit>()
-                                          .validateDelivery(widget.delivery);
+                                      if (_formKey.currentState!.validate()) {
+                                        context
+                                            .read<DeliveryCubit>()
+                                            .validateDelivery(widget.delivery);
+                                      }
                                     },
                               child: isLoading
                                   ? const SizedBox(
@@ -175,7 +185,8 @@ class _DeliveryValidationViewState extends State<_DeliveryValidationView> {
                     ),
                   ),
                 ),
-              ],
+              ),
+            ],
             ),
           ),
         ),

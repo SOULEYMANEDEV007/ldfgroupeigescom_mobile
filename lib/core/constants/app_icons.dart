@@ -24,15 +24,48 @@ abstract class AppIcons {
   static const play          = LucideIcons.play;
   static const check         = LucideIcons.check;
   static const checkCircle   = LucideIcons.checkCircle;
+  static const checkCheck    = LucideIcons.checkCheck;
   static const alertTriangle = LucideIcons.triangleAlert;
   static const info          = LucideIcons.info;
   static const logout        = LucideIcons.logOut;
   static const settings      = LucideIcons.settings;
   static const help          = LucideIcons.helpCircle;
   static const notification  = LucideIcons.bell;
+  static const bellRing      = LucideIcons.bellRing;
+  static const bellOff       = LucideIcons.bellOff;
   static const camera        = LucideIcons.camera;
   static const pdf           = LucideIcons.fileText;
   static const note          = LucideIcons.stickyNote;
+  static const trash         = LucideIcons.trash2;
+  static const refresh       = LucideIcons.refreshCw;
+
+  // ── Document & Visionneuse ────────────────────────────────────────────────
+  static const printer       = LucideIcons.printer;
+  static const download      = LucideIcons.download;
+  static const zoomIn        = LucideIcons.zoomIn;
+  static const zoomOut       = LucideIcons.zoomOut;
+  static const maximize      = LucideIcons.maximize2;
+  static const fileCheck     = LucideIcons.fileCheck2;
+
+  // ── Authentification & Sécurité ───────────────────────────────────────────
+  static const lock          = LucideIcons.lock;
+  static const eye           = LucideIcons.eye;
+  static const eyeOff        = LucideIcons.eyeOff;
+  static const shield        = LucideIcons.shield;
+  static const shieldCheck   = LucideIcons.shieldCheck;
+  static const fingerprint   = LucideIcons.fingerprint;
+
+  // ── Préférences & Système ─────────────────────────────────────────────────
+  static const moon          = LucideIcons.moon;
+  static const sun           = LucideIcons.sun;
+  static const globe         = LucideIcons.globe;
+  static const navigation    = LucideIcons.navigation;
+  static const volume2       = LucideIcons.volume2;
+  static const volumeX       = LucideIcons.volumeX;
+  static const smartphone    = LucideIcons.smartphone;
+  static const sparkles      = LucideIcons.sparkles;
+  static const sliders       = LucideIcons.sliders;
+  static const cloudOff      = LucideIcons.cloudOff;
 
   // ── Livraison & Tournée ───────────────────────────────────────────────────
   static const route         = LucideIcons.route;

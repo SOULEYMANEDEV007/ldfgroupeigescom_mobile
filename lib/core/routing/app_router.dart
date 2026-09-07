@@ -17,7 +17,9 @@ import '../../features/history/presentation/screens/history_detail_screen.dart';
 import '../../features/history/domain/entities/history_entry.dart';
 import '../../features/history/presentation/bloc/history_cubit.dart';
 import '../../core/di/injection.dart';
+import '../../features/notifications/presentation/screens/notifications_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
+import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../features/tour/presentation/screens/tour_detail_screen.dart';
 import '../../features/tour/presentation/screens/tour_screen.dart';
 
@@ -81,7 +83,8 @@ class AppRouter {
         path: '/delivery-note',
         parentNavigatorKey: _rootNavigatorKey,
         builder: (context, state) {
-          return const DeliveryNoteScreen();
+          final delivery = state.extra as Delivery?;
+          return DeliveryNoteScreen(delivery: delivery);
         },
       ),
       GoRoute(
@@ -109,6 +112,16 @@ class AppRouter {
           final entry = state.extra as HistoryEntry;
           return HistoryDetailScreen(entry: entry);
         },
+      ),
+      GoRoute(
+        path: '/notifications',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const NotificationsScreen(),
+      ),
+      GoRoute(
+        path: '/settings',
+        parentNavigatorKey: _rootNavigatorKey,
+        builder: (context, state) => const SettingsScreen(),
       ),
     ],
   );

@@ -115,12 +115,18 @@ class AppTheme {
           borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(color: AppColors.error, width: 2),
         ),
+        errorStyle: GoogleFonts.plusJakartaSans(
+          color: AppColors.error,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
+        errorMaxLines: 2,
         labelStyle: GoogleFonts.plusJakartaSans(
           color: AppColors.textSecondary,
           fontSize: 14,
         ),
         hintStyle: GoogleFonts.plusJakartaSans(
-          color: AppColors.border,
+          color: AppColors.textSecondary.withValues(alpha: 0.5),
           fontSize: 14,
         ),
         prefixIconColor: AppColors.textSecondary,

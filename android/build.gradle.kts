@@ -2,8 +2,14 @@ allprojects {
     repositories {
         google()
         mavenCentral()
+        // Miroir JetBrains Space — artifacts Kotlin toujours disponibles
+        maven { url = uri("https://packages.jetbrains.team/maven/p/kotlin/kotlin-dependencies") }
+        // Miroir Aliyun (Alibaba Cloud) — accessible depuis l'Afrique de l'Ouest
+        maven { url = uri("https://maven.aliyun.com/repository/public") }
+        maven { url = uri("https://maven.aliyun.com/repository/google") }
     }
 }
+
 
 val newBuildDir: Directory =
     rootProject.layout.buildDirectory

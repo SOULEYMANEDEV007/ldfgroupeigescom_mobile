@@ -93,33 +93,37 @@ class DashboardView extends StatelessWidget {
                                   ),
                                 ],
                               ),
-                              Stack(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(10),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withAlpha(20),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: const Icon(
-                                      AppIcons.notification,
-                                      color: Colors.white,
-                                      size: 22,
-                                    ),
-                                  ),
-                                  Positioned(
-                                    right: 8,
-                                    top: 8,
-                                    child: Container(
-                                      width: 8,
-                                      height: 8,
-                                      decoration: const BoxDecoration(
-                                        color: AppColors.navBarYellow,
+                              InkWell(
+                                onTap: () => context.push('/notifications'),
+                                borderRadius: BorderRadius.circular(24),
+                                child: Stack(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(10),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withAlpha(20),
                                         shape: BoxShape.circle,
                                       ),
+                                      child: const Icon(
+                                        AppIcons.notification,
+                                        color: Colors.white,
+                                        size: 22,
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                    Positioned(
+                                      right: 8,
+                                      top: 8,
+                                      child: Container(
+                                        width: 8,
+                                        height: 8,
+                                        decoration: const BoxDecoration(
+                                          color: AppColors.navBarYellow,
+                                          shape: BoxShape.circle,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ],
                           ),
