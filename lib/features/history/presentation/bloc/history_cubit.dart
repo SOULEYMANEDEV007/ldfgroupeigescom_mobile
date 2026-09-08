@@ -1,11 +1,13 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:injectable/injectable.dart';
 
 import '../../domain/entities/history_entry.dart';
 import '../../domain/repositories/history_repository.dart';
 
 part 'history_state.dart';
 
+@injectable
 class HistoryCubit extends Cubit<HistoryState> {
   final HistoryRepository _repository;
 

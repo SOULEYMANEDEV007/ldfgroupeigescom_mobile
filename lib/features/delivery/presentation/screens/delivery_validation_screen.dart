@@ -47,7 +47,7 @@ class _DeliveryValidationViewState extends State<_DeliveryValidationView> {
             onConfirm: () => context.go('/dashboard'),
           );
         }
-        if (state is DeliveryUpdateError) {
+        if (state is DeliveryError) {
           AppDialogs.showErrorDialog(context, state.message);
         }
       },

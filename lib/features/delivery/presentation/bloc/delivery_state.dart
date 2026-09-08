@@ -21,6 +21,7 @@ class DeliveryUpdating extends DeliveryState {
 /// Mise à jour réussie
 class DeliveryUpdated extends DeliveryState {
   final Delivery delivery;
+  
   const DeliveryUpdated(this.delivery);
 
   @override
@@ -28,10 +29,10 @@ class DeliveryUpdated extends DeliveryState {
 }
 
 /// Erreur lors de la mise à jour
-class DeliveryUpdateError extends DeliveryState {
+class DeliveryError extends DeliveryState {
   final Delivery delivery;
   final String message;
-  const DeliveryUpdateError(this.delivery, this.message);
+  const DeliveryError(this.delivery, this.message);
 
   @override
   List<Object?> get props => [delivery, message];

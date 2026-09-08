@@ -1,6 +1,9 @@
+import 'package:injectable/injectable.dart';
+
 import '../../domain/entities/history_entry.dart';
 
 /// Datasource mock — remplacé par appel API réel en production.
+@injectable
 class HistoryMockDatasource {
   Future<List<HistoryEntry>> fetchHistory() async {
     // Simule un délai réseau

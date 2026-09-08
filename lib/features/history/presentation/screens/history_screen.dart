@@ -95,7 +95,8 @@ class _HistoryViewState extends State<_HistoryView> {
             child: SafeArea(
               bottom: false,
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(8, 4, 20, 20),
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+                // ↑ STANDARD : horizontal 16px, vertical 12px, bottom 20px
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -105,9 +106,18 @@ class _HistoryViewState extends State<_HistoryView> {
                         // Bouton retour
                         IconButton(
                           onPressed: () => context.pop(),
-                          icon: const Icon(AppIcons.back,
-                              color: Colors.white, size: 22),
+                          icon: const Icon(
+                            AppIcons.back,
+                            color: Colors.white,
+                            size: 22,
+                          ),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(
+                            minWidth: 40,
+                            minHeight: 40,
+                          ),
                         ),
+                        const SizedBox(width: 8),
                         const Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -118,12 +128,17 @@ class _HistoryViewState extends State<_HistoryView> {
                                   color: Colors.white,
                                   fontSize: 20,
                                   fontWeight: FontWeight.w800,
+                                  height: 1.2,
                                 ),
                               ),
+                              SizedBox(height: 2),
                               Text(
                                 'Toutes vos livraisons terminées',
                                 style: TextStyle(
-                                    color: Colors.white70, fontSize: 12),
+                                  color: Colors.white70,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
                             ],
                           ),
@@ -271,6 +286,8 @@ class _HistoryViewState extends State<_HistoryView> {
                         context.read<HistoryCubit>().fetchHistory(),
                     child: ListView.separated(
                       padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      // ↑ Permet le scroll même avec peu d'items
                       itemCount: state.filtered.length,
                       separatorBuilder: (context, index) =>
                           const SizedBox(height: 12),
@@ -512,13 +529,15 @@ class _HistoryCard extends StatelessWidget {
     final statusIcon =
         isDelivered ? AppIcons.checkCircle : AppIcons.error;
 
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
+    return RepaintBoundary(
+      // ↑ Optimise les performances en isolant le repaint
+      child: Material(
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        onTap: onTap,
-        child: Container(
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: onTap,
+          child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: AppColors.border),
@@ -714,6 +733,7 @@ class _HistoryCard extends StatelessWidget {
             ),
           ),
         ),
+      ),
       ),
     );
   }

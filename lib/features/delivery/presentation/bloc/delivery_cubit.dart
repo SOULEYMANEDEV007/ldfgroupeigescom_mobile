@@ -19,24 +19,69 @@ class DeliveryCubit extends Cubit<DeliveryState> {
 
   DeliveryCubit(this.updateStatusUseCase) : super(DeliveryInitial());
 
+  /// Démarre une livraison
   Future<void> startDelivery(Delivery delivery) async {
-    await _changeStatus(delivery, DeliveryStatus.inProgress);
-  }
-
-  Future<void> validateDelivery(Delivery delivery) async {
-    await _changeStatus(delivery, DeliveryStatus.delivered);
-  }
-
-  Future<void> reportFailure(Delivery delivery) async {
-    await _changeStatus(delivery, DeliveryStatus.cancelled);
-  }
-
-  Future<void> _changeStatus(Delivery delivery, DeliveryStatus status) async {
     emit(DeliveryUpdating(delivery));
-    final result = await updateStatusUseCase(delivery.id, status);
-    result.fold(
-      (error) => emit(DeliveryUpdateError(delivery, error)),
-      (updated) => emit(DeliveryUpdated(updated)),
-    );
+
+    try {
+      final result = await updateStatusUseCase(
+        delivery.id,
+        DeliveryStatus.inProgress,
+      );
+
+      result.fold(
+        (error) => emit(DeliveryError(delivery, error)),
+        (updatedDelivery) => emit(DeliveryUpdated(updatedDelivery)),
+      );
+    } catch (e) {
+      emit(DeliveryError(delivery, e.toString()));
+    }
+  }
+
+  /// Valide une livraison avec signature et photos
+  Future<void> validateDelivery(
+    Delivery delivery, {
+    String? notes,
+    String? signatureUrl,
+    List<String>? photoUrls,
+  }) async {
+    emit(DeliveryUpdating(delivery));
+
+    try {
+      final result = await updateStatusUseCase(
+        delivery.id,
+        DeliveryStatus.delivered,
+      );
+
+      result.fold(
+        (error) => emit(DeliveryError(delivery, error)),
+        (updatedDelivery) => emit(DeliveryUpdated(updatedDelivery)),
+      );
+    } catch (e) {
+      emit(DeliveryError(delivery, e.toString()));
+    }
+  }
+
+  /// Signale un échec de livraison
+  Future<void> reportFailure(
+    Delivery delivery, {
+    required String reason,
+    String? notes,
+  }) async {
+    emit(DeliveryUpdating(delivery));
+
+    try {
+      final result = await updateStatusUseCase(
+        delivery.id,
+        DeliveryStatus.cancelled,
+      );
+
+      result.fold(
+        (error) => emit(DeliveryError(delivery, error)),
+        (updatedDelivery) => emit(DeliveryUpdated(updatedDelivery)),
+      );
+    } catch (e) {
+      emit(DeliveryError(delivery, e.toString()));
+    }
   }
 }

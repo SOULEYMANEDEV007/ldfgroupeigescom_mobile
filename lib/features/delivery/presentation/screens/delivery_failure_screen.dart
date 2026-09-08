@@ -46,7 +46,7 @@ class _DeliveryFailureViewState extends State<_DeliveryFailureView> {
             onConfirm: () => context.go('/dashboard'),
           );
         }
-        if (state is DeliveryUpdateError) {
+        if (state is DeliveryError) {
           AppDialogs.showErrorDialog(context, state.message);
         }
       },
@@ -150,53 +150,55 @@ class _DeliveryFailureViewState extends State<_DeliveryFailureView> {
                           ),
                           const SizedBox(height: 24),
 
-                        const Spacer(),
-                        BlocBuilder<DeliveryCubit, DeliveryState>(
-                          builder: (context, state) {
-                            final isLoading = state is DeliveryUpdating;
-                            return ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.error,
+                          const Spacer(),
+                          BlocBuilder<DeliveryCubit, DeliveryState>(
+                            builder: (context, state) {
+                              final isLoading = state is DeliveryUpdating;
+                              return ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.error,
+                                ),
+                                onPressed: isLoading
+                                    ? null
+                                    : () {
+                                        if (_formKey.currentState!.validate()) {
+                                          context.read<DeliveryCubit>()
+                                            .reportFailure(
+                                              widget.delivery,
+                                              reason: _reasonController.text.trim(),
+                                            );
+                                        }
+                                      },
+                                child: isLoading
+                                    ? const SizedBox(
+                                        height: 20,
+                                        width: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: Colors.white,
+                                        ),
+                                      )
+                                    : const Text('Confirmer l\'échec'),
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 12),
+                          TextButton(
+                            onPressed: () => context.pop(),
+                            child: const Text(
+                              'Annuler',
+                              style: TextStyle(
+                                color: AppColors.textSecondary,
+                                fontWeight: FontWeight.w600,
                               ),
-                              onPressed: isLoading
-                                  ? null
-                                  : () {
-                                      if (_formKey.currentState!.validate()) {
-                                        context
-                                            .read<DeliveryCubit>()
-                                            .reportFailure(widget.delivery);
-                                      }
-                                    },
-                              child: isLoading
-                                  ? const SizedBox(
-                                      height: 20,
-                                      width: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: Colors.white,
-                                      ),
-                                    )
-                                  : const Text('Confirmer l\'échec'),
-                            );
-                          },
-                        ),
-                        const SizedBox(height: 12),
-                        TextButton(
-                          onPressed: () => context.pop(),
-                          child: const Text(
-                            'Annuler',
-                            style: TextStyle(
-                              color: AppColors.textSecondary,
-                              fontWeight: FontWeight.w600,
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
             ),
           ),
         ),
