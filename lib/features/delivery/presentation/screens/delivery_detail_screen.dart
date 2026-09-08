@@ -4,16 +4,18 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:geolocator/geolocator.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_gradients.dart';
 import '../../../../core/constants/app_icons.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/utils/app_feedback.dart';
+import '../../../../core/services/location_service.dart';
 import '../../domain/entities/delivery.dart';
 import '../bloc/delivery_cubit.dart';
 
-const _defaultLatLng = LatLng(5.3600, -4.0083);
+const _defaultLatLng = LatLng(5.3600, -4.0083); // Abidjan, Côte d'Ivoire
 
 class DeliveryDetailScreen extends StatelessWidget {
   final Delivery delivery;
@@ -40,7 +42,7 @@ class _DeliveryDetailView extends StatelessWidget {
           AppFeedback.success(context, 'Tournée démarrée !');
           context.pop();
         }
-        if (state is DeliveryUpdateError) {
+        if (state is DeliveryError) {
           AppFeedback.error(context, state.message);
         }
       },
@@ -55,11 +57,13 @@ class _DeliveryDetailView extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // ── Timeline de suivi ────────────────────────────
-
-                    _sectionLabel('Suivi de la livraison'),
                     const SizedBox(height: 10),
-                    _StatusTimeline(status: delivery.status),
-                    _InfoStrip(delivery: delivery),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: _sectionLabel('Suivi de la livraison'),
+                    ),
+                    const SizedBox(height: 10),
+                    _CompactTimeline(status: delivery.status),
                     _MapSection(delivery: delivery),
                     Padding(
                       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
@@ -216,138 +220,78 @@ class _DeliveryHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(gradient: AppGradients.primaryHeader),
+      decoration: const BoxDecoration(
+        gradient: AppGradients.primaryHeader,
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(28),
+          bottomRight: Radius.circular(28),
+        ),
+      ),
       child: SafeArea(
         bottom: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(8, 4, 16, 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+          // ↑ STANDARD : horizontal 16px, vertical 12px, bottom 20px
+          child: Row(
             children: [
-              Row(
-                children: [
-                  IconButton(
-                    onPressed: () => context.pop(),
-                    icon: const Icon(
-                      AppIcons.back,
-                      color: Colors.white,
-                      size: 22,
-                    ),
-                  ),
-                  const Expanded(
-                    child: Text(
-                      'Détail livraison',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 17,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () {
-                      // TODO: url_launcher tel:${delivery.phone}
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.all(9),
-                      decoration: const BoxDecoration(
-                        color: AppColors.navBarYellow,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        AppIcons.phoneCall,
-                        size: 20,
-                        color: AppColors.primaryDark,
-                      ),
-                    ),
-                  ),
-                ],
+              IconButton(
+                onPressed: () => context.pop(),
+                icon: const Icon(
+                  AppIcons.back,
+                  color: Colors.white,
+                  size: 22,
+                ),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(
+                  minWidth: 40,
+                  minHeight: 40,
+                ),
               ),
-              const SizedBox(height: 10),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Container(
-                      width: 46,
-                      height: 46,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withAlpha(30),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        AppIcons.person,
+                    Text(
+                      delivery.clientName,
+                      style: const TextStyle(
                         color: Colors.white,
-                        size: 24,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        height: 1.2,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'DESTINATAIRE',
-                            style: TextStyle(
-                              color: Colors.white.withAlpha(160),
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 1.2,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            delivery.clientName.toUpperCase(),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 17,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              const Icon(
-                                AppIcons.mapPin,
-                                size: 13,
-                                color: AppColors.navBarYellow,
-                              ),
-                              const SizedBox(width: 4),
-                              Expanded(
-                                child: Text(
-                                  delivery.address,
-                                  style: TextStyle(
-                                    color: Colors.white.withAlpha(200),
-                                    fontSize: 12,
-                                  ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 2),
-                          Row(
-                            children: [
-                              const Icon(
-                                AppIcons.phone,
-                                size: 13,
-                                color: AppColors.navBarYellow,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                delivery.phone,
-                                style: TextStyle(
-                                  color: Colors.white.withAlpha(200),
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
+                    const SizedBox(height: 2),
+                    Text(
+                      delivery.phone,
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.85),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: () {
+                  // TODO: url_launcher tel:${delivery.phone}
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: const BoxDecoration(
+                    color: AppColors.navBarYellow,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    AppIcons.phoneCall,
+                    size: 18,
+                    color: AppColors.primaryDark,
+                  ),
                 ),
               ),
             ],
@@ -358,157 +302,61 @@ class _DeliveryHeader extends StatelessWidget {
   }
 }
 
-// ─── Info Strip ───────────────────────────────────────────────────────────────
-class _InfoStrip extends StatelessWidget {
-  final Delivery delivery;
-  const _InfoStrip({required this.delivery});
-
-  @override
-  Widget build(BuildContext context) {
-    final (statusLabel, statusColor, statusBg) = switch (delivery.status) {
-      DeliveryStatus.pending => (
-        'En attente',
-        AppColors.warning,
-        AppColors.warningSoft,
-      ),
-      DeliveryStatus.inProgress => (
-        'En cours',
-        AppColors.accentBlue,
-        AppColors.accentBlueSoft,
-      ),
-      DeliveryStatus.delivered => (
-        'Livré ✓',
-        AppColors.success,
-        AppColors.successSoft,
-      ),
-      DeliveryStatus.cancelled => (
-        'Annulé',
-        AppColors.error,
-        AppColors.errorSoft,
-      ),
-    };
-
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(6),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: _StripItem(
-              label: 'État',
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: statusBg,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  statusLabel,
-                  style: TextStyle(
-                    color: statusColor,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 11,
-                  ),
-                ),
-              ),
-            ),
-          ),
-          _VerticalDivider(),
-          Expanded(
-            child: _StripItem(
-              label: 'Date planifiée',
-              child: Text(
-                DateFormat('dd/MM/yy\nHH:mm').format(delivery.scheduledTime),
-                style: const TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 12,
-                  height: 1.4,
-                ),
-              ),
-            ),
-          ),
-          _VerticalDivider(),
-          Expanded(
-            child: _StripItem(
-              label: 'Charge',
-              child: Text(
-                '${delivery.weight} kg',
-                style: const TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 12,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StripItem extends StatelessWidget {
-  final String label;
-  final Widget child;
-  const _StripItem({required this.label, required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            color: AppColors.textSecondary,
-            fontSize: 10,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        const SizedBox(height: 4),
-        child,
-      ],
-    );
-  }
-}
-
-class _VerticalDivider extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 38,
-      width: 1,
-      margin: const EdgeInsets.symmetric(horizontal: 8),
-      color: AppColors.border,
-    );
-  }
-}
-
 // ─── Carte GPS ────────────────────────────────────────────────────────────────
-class _MapSection extends StatelessWidget {
+class _MapSection extends StatefulWidget {
   final Delivery delivery;
   const _MapSection({required this.delivery});
 
   @override
+  State<_MapSection> createState() => _MapSectionState();
+}
+
+class _MapSectionState extends State<_MapSection> {
+  final _locationService = getIt<LocationService>();
+  Position? _currentPosition;
+  bool _isLoadingLocation = false;
+  String? _locationError;
+
+  @override
+  void initState() {
+    super.initState();
+    _getCurrentLocation();
+  }
+
+  Future<void> _getCurrentLocation() async {
+    setState(() {
+      _isLoadingLocation = true;
+      _locationError = null;
+    });
+
+    try {
+      final position = await _locationService.getCurrentPosition();
+      if (mounted) {
+        setState(() {
+          _currentPosition = position;
+          _isLoadingLocation = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _locationError = e.toString();
+          _isLoadingLocation = false;
+        });
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    const point = _defaultLatLng;
+    // Utiliser la position actuelle si disponible, sinon position par défaut
+    final point = _currentPosition != null
+        ? LatLng(_currentPosition!.latitude, _currentPosition!.longitude)
+        : _defaultLatLng;
+
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
-      height: 180,
+      height: 120,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.border),
@@ -524,10 +372,10 @@ class _MapSection extends StatelessWidget {
       child: Stack(
         children: [
           FlutterMap(
-            options: const MapOptions(
+            options: MapOptions(
               initialCenter: point,
               initialZoom: 14.5,
-              interactionOptions: InteractionOptions(
+              interactionOptions: const InteractionOptions(
                 flags: InteractiveFlag.pinchZoom | InteractiveFlag.drag,
               ),
             ),
@@ -565,6 +413,35 @@ class _MapSection extends StatelessWidget {
               ),
             ],
           ),
+          // Indicateur de chargement
+          if (_isLoadingLocation)
+            Container(
+              color: Colors.black.withAlpha(100),
+              child: const Center(
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              ),
+            ),
+          // Erreur de localisation
+          if (_locationError != null && !_isLoadingLocation)
+            Positioned(
+              top: 8,
+              right: 8,
+              child: IconButton(
+                icon: Icon(
+                  AppIcons.refresh,
+                  color: AppColors.error,
+                  size: 20,
+                ),
+                onPressed: _getCurrentLocation,
+                style: IconButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  padding: const EdgeInsets.all(8),
+                ),
+              ),
+            ),
           Positioned(
             bottom: 0,
             left: 0,
@@ -580,15 +457,19 @@ class _MapSection extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  const Icon(
-                    AppIcons.mapPin,
+                  Icon(
+                    _currentPosition != null
+                        ? AppIcons.navigation
+                        : AppIcons.mapPin,
                     color: AppColors.navBarYellow,
                     size: 15,
                   ),
                   const SizedBox(width: 6),
                   Expanded(
                     child: Text(
-                      delivery.address,
+                      _currentPosition != null
+                          ? 'Position actuelle activée'
+                          : widget.delivery.address,
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 12,
@@ -799,51 +680,29 @@ class _StickyActionBar extends StatelessWidget {
 }
 
 // ─── Timeline de suivi de livraison ──────────────────────────────────────────
-class _StatusTimeline extends StatelessWidget {
+class _CompactTimeline extends StatelessWidget {
   final DeliveryStatus status;
-  const _StatusTimeline({required this.status});
-
-  // Retourne l'index courant de l'étape (0, 1, 2) ou -1 si annulé
-  int get _stepIndex => switch (status) {
-    DeliveryStatus.pending => 0,
-    DeliveryStatus.inProgress => 1,
-    DeliveryStatus.delivered => 2,
-    DeliveryStatus.cancelled => -1,
-  };
+  const _CompactTimeline({required this.status});
 
   @override
   Widget build(BuildContext context) {
-    // ── Cas annulé ────────────────────────────────────────────────────────
     if (status == DeliveryStatus.cancelled) {
       return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        margin: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
           color: AppColors.errorSoft,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.error.withAlpha(60)),
+          borderRadius: BorderRadius.circular(10),
         ),
         child: Row(
           children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppColors.error.withAlpha(20),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                AppIcons.cancelled,
+            const Icon(AppIcons.cancelled, color: AppColors.error, size: 16),
+            const SizedBox(width: 8),
+            const Text(
+              'Livraison annulée',
+              style: TextStyle(
                 color: AppColors.error,
-                size: 18,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                'Livraison annulée',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.error,
-                  fontWeight: FontWeight.w700,
-                ),
+                fontWeight: FontWeight.w700,
               ),
             ),
           ],
@@ -851,109 +710,60 @@ class _StatusTimeline extends StatelessWidget {
       );
     }
 
-    // ── Étapes ────────────────────────────────────────────────────────────
     const steps = [
-      (AppIcons.pending, 'En attente', 'Programmée'),
-      (AppIcons.truck, 'En transit', 'Prise en charge'),
-      (AppIcons.packageCheck, 'Livré', 'Confirmée'),
+      (AppIcons.pending, 'Attente'),
+      (AppIcons.truck, 'En cours'),
+      (AppIcons.checkCircle, 'Livré'),
     ];
 
-    final current = _stepIndex;
+    final current = switch (status) {
+      DeliveryStatus.pending => 0,
+      DeliveryStatus.inProgress => 1,
+      DeliveryStatus.delivered => 2,
+      _ => 0,
+    };
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.border),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withAlpha(5),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: List.generate(steps.length * 2 - 1, (i) {
-          // ── Connecteur horizontal ──────────────────────────────────────
           if (i.isOdd) {
-            final stepBefore = i ~/ 2;
-            final isActive = current > stepBefore;
+            final idx = i ~/ 2;
             return Expanded(
-              child: Padding(
-                padding: const EdgeInsets.only(top: 18),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 400),
-                  height: 3,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(4),
-                    color: isActive ? AppColors.primary : AppColors.border,
-                  ),
-                ),
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 14),
+                height: 2,
+                color: current > idx ? AppColors.primary : AppColors.border,
               ),
             );
           }
-
-          // ── Nœud d'étape ──────────────────────────────────────────────
           final idx = i ~/ 2;
-          final isDone = current >= idx;
-          final isCurrent = current == idx;
-          final (icon, title, subtitle) = steps[idx];
-
-          final nodeColor = isDone ? AppColors.primary : AppColors.border;
-          final iconColor = isDone ? Colors.white : AppColors.textSecondary;
-          final titleColor = isDone
-              ? AppColors.primary
-              : AppColors.textSecondary;
-
+          final isActive = current >= idx;
           return Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Cercle avec icône
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                width: 38,
-                height: 38,
+              Container(
+                width: 28,
+                height: 28,
                 decoration: BoxDecoration(
-                  color: nodeColor,
+                  color: isActive ? AppColors.primary : AppColors.border,
                   shape: BoxShape.circle,
-                  border: isCurrent && !isDone
-                      ? Border.all(color: AppColors.primary, width: 2)
-                      : null,
-                  boxShadow: isDone
-                      ? [
-                          BoxShadow(
-                            color: AppColors.primary.withAlpha(60),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ]
-                      : null,
                 ),
-                child: Icon(icon, size: 17, color: iconColor),
-              ),
-              const SizedBox(height: 6),
-              // Titre
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w500,
-                  color: titleColor,
-                  letterSpacing: 0.1,
+                child: Icon(
+                  steps[idx].$1,
+                  size: 14,
+                  color: isActive ? Colors.white : AppColors.textSecondary,
                 ),
               ),
-              // Sous-titre discret
+              const SizedBox(height: 2),
               Text(
-                subtitle,
-                textAlign: TextAlign.center,
+                steps[idx].$2,
                 style: TextStyle(
                   fontSize: 9,
-                  color: AppColors.textSecondary.withAlpha(160),
-                  height: 1.3,
+                  fontWeight: current == idx
+                      ? FontWeight.w700
+                      : FontWeight.w500,
+                  color: isActive ? AppColors.primary : AppColors.textSecondary,
                 ),
               ),
             ],

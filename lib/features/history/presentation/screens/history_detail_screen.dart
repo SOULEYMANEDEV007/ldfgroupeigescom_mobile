@@ -25,19 +25,11 @@ class HistoryDetailScreen extends StatelessWidget {
         children: [
           // ── Header gradient vert ─────────────────────────────────────────
           Container(
-            decoration: BoxDecoration(
-              gradient: isDelivered
-                  ? AppGradients.primaryHeader
-                  : const LinearGradient(
-                      colors: [Color(0xFFB91C1C), AppColors.error],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-            ),
+            decoration: const BoxDecoration(gradient: AppGradients.primaryHeader),
             child: SafeArea(
               bottom: false,
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(8, 4, 16, 20),
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -46,17 +38,16 @@ class HistoryDetailScreen extends StatelessWidget {
                       children: [
                         IconButton(
                           onPressed: () => context.pop(),
-                          icon: const Icon(AppIcons.back,
-                              color: Colors.white, size: 22),
+                          icon: const Icon(AppIcons.back, color: Colors.white),
                         ),
-                        const Expanded(
+                        const SizedBox(width: 6),
+                        Expanded(
                           child: Text(
                             'Détail historique',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 17,
-                              fontWeight: FontWeight.bold,
-                            ),
+                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
                           ),
                         ),
                       ],

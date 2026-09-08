@@ -15,15 +15,6 @@ import 'package:get_it/get_it.dart' as _i174;
 import 'package:injectable/injectable.dart' as _i526;
 import 'package:shared_preferences/shared_preferences.dart' as _i460;
 
-import '../../features/history/data/datasources/history_mock_datasource.dart'
-    as _histDs;
-import '../../features/history/data/repositories_impl/history_repository_impl.dart'
-    as _histRepo;
-import '../../features/history/domain/repositories/history_repository.dart'
-    as _histRepoAbs;
-import '../../features/history/presentation/bloc/history_cubit.dart'
-    as _histCubit;
-
 import '../../features/auth/data/datasources/auth_remote_data_source.dart'
     as _i107;
 import '../../features/auth/data/repositories_impl/auth_repository_impl.dart'
@@ -50,6 +41,9 @@ import '../../features/delivery/domain/repositories/delivery_repository.dart'
 import '../../features/delivery/domain/usecases/update_delivery_status_usecase.dart'
     as _i289;
 import '../../features/delivery/presentation/bloc/delivery_cubit.dart' as _i235;
+import '../../features/history/domain/repositories/history_repository.dart'
+    as _i142;
+import '../../features/history/presentation/bloc/history_cubit.dart' as _i674;
 import '../../features/tour/data/datasources/tour_remote_data_source.dart'
     as _i536;
 import '../../features/tour/data/repositories_impl/tour_repository_impl.dart'
@@ -60,6 +54,7 @@ import '../../features/tour/presentation/bloc/tour_cubit.dart' as _i195;
 import '../network/auth_interceptor.dart' as _i908;
 import '../network/dio_client.dart' as _i667;
 import '../network/token_manager.dart' as _i374;
+import '../services/location_service.dart' as _i669;
 import 'register_module.dart' as _i291;
 
 extension GetItInjectableX on _i174.GetIt {
@@ -75,6 +70,7 @@ extension GetItInjectableX on _i174.GetIt {
       () => registerModule.prefs,
       preResolve: true,
     );
+    gh.lazySingleton<_i669.LocationService>(() => _i669.LocationService());
     gh.lazySingleton<_i536.TourRemoteDataSource>(
       () => _i536.MockTourRemoteDataSourceImpl(),
     );
@@ -95,6 +91,9 @@ extension GetItInjectableX on _i174.GetIt {
     );
     gh.factory<_i869.GetToursUseCase>(
       () => _i869.GetToursUseCase(gh<_i878.TourRepository>()),
+    );
+    gh.factory<_i674.HistoryCubit>(
+      () => _i674.HistoryCubit(gh<_i142.HistoryRepository>()),
     );
     gh.factory<_i908.AuthInterceptor>(
       () => _i908.AuthInterceptor(gh<_i374.TokenManager>()),
@@ -133,19 +132,6 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i990.LoginBloc>(
       () => _i990.LoginBloc(gh<_i188.LoginUseCase>()),
     );
-
-    // ── History (enregistrement manuel — pas de code gen nécessaire) ────────
-    gh.lazySingleton<_histDs.HistoryMockDatasource>(
-      () => _histDs.HistoryMockDatasource(),
-    );
-    gh.lazySingleton<_histRepoAbs.HistoryRepository>(
-      () => _histRepo.HistoryRepositoryImpl(
-          gh<_histDs.HistoryMockDatasource>()),
-    );
-    gh.factory<_histCubit.HistoryCubit>(
-      () => _histCubit.HistoryCubit(gh<_histRepoAbs.HistoryRepository>()),
-    );
-
     return this;
   }
 }

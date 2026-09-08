@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/app_gradients.dart';
 import '../../../../core/constants/app_icons.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/network/token_manager.dart';
@@ -13,15 +14,44 @@ class ProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Mon Profil'),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: true,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
+      backgroundColor: AppColors.background,
+      body: Column(
+        children: [
+          // ── HEADER UNIFORME AVEC DÉGRADÉ ──────────────────────────────
+          Container(
+            decoration: const BoxDecoration(gradient: AppGradients.primaryHeader),
+            child: SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+                child: Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(AppIcons.back, color: Colors.white),
+                      onPressed: () => context.go('/dashboard'),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Mon Profil',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                    const Spacer(),
+                    // Actions si besoin
+                  ],
+                ),
+              ),
+            ),
+          ),
+          
+          // ── CONTENU ────────────────────────────────────────────────────
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16.0),
+              // ↑ STANDARD : padding 16px
+              child: Column(
           children: [
             // Avatar & Name
             const CircleAvatar(
@@ -104,6 +134,9 @@ class ProfileScreen extends StatelessWidget {
             ),
           ],
         ),
+      ),
+          ),
+        ],
       ),
     );
   }

@@ -42,50 +42,27 @@ class TourView extends StatelessWidget {
             child: SafeArea(
               bottom: false,
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 12, 8, 20),
-                child: Row(
-                  children: [
-                    const Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Mes Tournées',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 22,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                          SizedBox(height: 4),
-                          Text(
-                            'Suivi de vos trajets de livraison',
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ],
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+                // ↑ STANDARD : horizontal 16px (même que le contenu)
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    Text(
+                      'Mes Tournées',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        height: 1.2,
                       ),
                     ),
-                    // Bouton filtre
-                    BlocBuilder<TourCubit, TourState>(
-                      builder: (context, state) => IconButton(
-                        icon: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withAlpha(30),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Icon(
-                            AppIcons.filter,
-                            color: Colors.white,
-                            size: 20,
-                          ),
-                        ),
-                        onPressed: () {
-                          // TODO: Afficher le filtre
-                        },
+                    SizedBox(height: 2),
+                    Text(
+                      'Suivi de vos trajets de livraison',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
@@ -100,9 +77,7 @@ class TourView extends StatelessWidget {
               builder: (context, state) {
                 if (state is TourLoading || state is TourInitial) {
                   return const Center(
-                    child: CircularProgressIndicator(
-                      color: AppColors.primary,
-                    ),
+                    child: CircularProgressIndicator(color: AppColors.primary),
                   );
                 }
 
@@ -142,9 +117,7 @@ class TourView extends StatelessWidget {
                           const SizedBox(height: 16),
                           Text(
                             'Aucune tournée pour le moment.',
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodyLarge
+                            style: Theme.of(context).textTheme.bodyLarge
                                 ?.copyWith(color: AppColors.textSecondary),
                           ),
                         ],
@@ -157,10 +130,12 @@ class TourView extends StatelessWidget {
                     onRefresh: () async =>
                         context.read<TourCubit>().fetchTours(),
                     child: ListView.separated(
-                      padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                      // ↑ STANDARD : horizontal 16px (aligné avec l'AppBar), top 16px
                       itemCount: tours.length,
                       separatorBuilder: (context, index) =>
-                          const SizedBox(height: 14),
+                          const SizedBox(height: 12),
+                      // ↑ STANDARD : 12px entre les cartes
                       itemBuilder: (context, index) =>
                           _TourCard(tour: tours[index]),
                     ),
@@ -184,184 +159,171 @@ class _TourCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final completedDeliveries =
-        tour.deliveries.where((d) => d.status.name == 'delivered').length;
+    final completedDeliveries = tour.deliveries
+        .where((d) => d.status.name == 'delivered')
+        .length;
     final totalDeliveries = tour.deliveries.length;
-    final progress =
-        totalDeliveries > 0 ? completedDeliveries / totalDeliveries : 0.0;
-    final progressLabel = '$completedDeliveries/$totalDeliveries livrées';
+    final progress = totalDeliveries > 0
+        ? completedDeliveries / totalDeliveries
+        : 0.0;
 
     final statusColor = _statusColor(tour.status);
     final statusBgColor = _statusBgColor(tour.status);
     final statusLabel = _statusLabel(tour.status);
 
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(18),
-      elevation: 0,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(18),
-        onTap: () => context.push('/tour-detail', extra: tour),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // ── Bandeau supérieur coloré selon le statut ──────────────────
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: BoxDecoration(
-                  color: statusBgColor,
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(18),
-                    topRight: Radius.circular(18),
+    return RepaintBoundary(
+      // ↑ Optimise les performances en isolant le repaint
+      child: Material(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: () => context.push('/tour-detail', extra: tour),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // ── Bandeau supérieur compact ─────────────────────────────
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 8,
                   ),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    // Référence tournée
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(8),
+                  decoration: BoxDecoration(
+                    color: statusBgColor,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(14),
+                      topRight: Radius.circular(14),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Icon(
+                              AppIcons.route,
+                              size: 14,
+                              color: statusColor,
+                            ),
                           ),
-                          child: Icon(
-                            AppIcons.route,
-                            size: 16,
-                            color: statusColor,
+                          const SizedBox(width: 6),
+                          Text(
+                            tour.reference,
+                            style: TextStyle(
+                              color: statusColor,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: statusColor.withAlpha(20),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: statusColor.withAlpha(80),
+                            width: 1,
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        Text(
-                          tour.reference,
+                        child: Text(
+                          statusLabel,
                           style: TextStyle(
                             color: statusColor,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 11,
                           ),
                         ),
-                      ],
-                    ),
-                    // Badge statut
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: statusColor.withAlpha(20),
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                            color: statusColor.withAlpha(80), width: 1),
                       ),
-                      child: Text(
-                        statusLabel,
-                        style: TextStyle(
-                          color: statusColor,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
 
-              // ── Corps de la card ──────────────────────────────────────────
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Nom de tournée
-                    Text(
-                      'Tournée ${tour.agence}',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w800,
-                            fontSize: 16,
-                            color: AppColors.textPrimary,
+                // ── Corps compact ────────────────────────────────────────────
+                Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Nom + livraisons sur une ligne
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Tournée ${tour.agence}',
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 14,
+                                  color: AppColors.textPrimary,
+                                ),
                           ),
-                    ),
-                    const SizedBox(height: 6),
-
-                    // Véhicule
-                    Row(
-                      children: [
-                        const Icon(
-                          AppIcons.car,
-                          size: 15,
-                          color: AppColors.textSecondary,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          tour.vehiclePlate,
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodyMedium
-                              ?.copyWith(color: AppColors.textSecondary),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 14),
-                    const Divider(height: 1),
-                    const SizedBox(height: 14),
-
-                    // ── Progression ──────────────────────────────────────────
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            const Icon(
-                              AppIcons.truck,
-                              size: 18,
-                              color: AppColors.primary,
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              progressLabel,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleSmall
-                                  ?.copyWith(fontWeight: FontWeight.w700),
-                            ),
-                          ],
-                        ),
-                        const Icon(
-                          AppIcons.chevronRight,
-                          size: 14,
-                          color: AppColors.textSecondary,
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 10),
-
-                    // Barre de progression verte
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(99),
-                      child: LinearProgressIndicator(
-                        value: progress,
-                        minHeight: 6,
-                        backgroundColor: AppColors.border,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          progress == 1.0
-                              ? AppColors.success
-                              : AppColors.primary,
-                        ),
+                          Text(
+                            '$totalDeliveries livraison${totalDeliveries > 1 ? 's' : ''}',
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: AppColors.textSecondary,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 6),
+
+                      // Progression sur une ligne avec barre
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(99),
+                              child: LinearProgressIndicator(
+                                value: progress,
+                                minHeight: 5,
+                                backgroundColor: AppColors.border,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  progress == 1.0
+                                      ? AppColors.success
+                                      : AppColors.primary,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            '$completedDeliveries/$totalDeliveries',
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.primaryDark,
+                            ),
+                          ),
+                          const Icon(
+                            AppIcons.chevronRight,
+                            size: 14,
+                            color: AppColors.textSecondary,
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -369,23 +331,23 @@ class _TourCard extends StatelessWidget {
   }
 
   Color _statusColor(TourStatus s) => switch (s) {
-        TourStatus.pending    => AppColors.warning,
-        TourStatus.inProgress => AppColors.primary,
-        TourStatus.completed  => AppColors.success,
-        TourStatus.cancelled  => AppColors.error,
-      };
+    TourStatus.pending => AppColors.warning,
+    TourStatus.inProgress => AppColors.primary,
+    TourStatus.completed => AppColors.success,
+    TourStatus.cancelled => AppColors.error,
+  };
 
   Color _statusBgColor(TourStatus s) => switch (s) {
-        TourStatus.pending    => AppColors.warningSoft,
-        TourStatus.inProgress => AppColors.primarySoft,
-        TourStatus.completed  => AppColors.successSoft,
-        TourStatus.cancelled  => AppColors.errorSoft,
-      };
+    TourStatus.pending => AppColors.warningSoft,
+    TourStatus.inProgress => AppColors.primarySoft,
+    TourStatus.completed => AppColors.successSoft,
+    TourStatus.cancelled => AppColors.errorSoft,
+  };
 
   String _statusLabel(TourStatus s) => switch (s) {
-        TourStatus.pending    => 'Programmée',
-        TourStatus.inProgress => 'En cours',
-        TourStatus.completed  => 'Terminée',
-        TourStatus.cancelled  => 'Annulée',
-      };
+    TourStatus.pending => 'Programmée',
+    TourStatus.inProgress => 'En cours',
+    TourStatus.completed => 'Terminée',
+    TourStatus.cancelled => 'Annulée',
+  };
 }

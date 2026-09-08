@@ -53,11 +53,16 @@ class DashboardView extends StatelessWidget {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(28),
+                      bottomRight: Radius.circular(28),
+                    ),
                   ),
                   child: SafeArea(
                     bottom: false,
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(24, 16, 24, 28),
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                      // ↑ STANDARD : horizontal 16px, vertical 12px, bottom 24px
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -258,7 +263,8 @@ class DashboardView extends StatelessWidget {
                       // Chevauche légèrement le header pour un effet immersif
                       offset: const Offset(0, -16),
                       child: Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
+                        padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+                        // ↑ STANDARD : horizontal 16px
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -411,20 +417,22 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: accent ? color : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: color.withAlpha(accent ? 55 : 12),
-            blurRadius: 14,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Row(
+    return RepaintBoundary(
+      // ↑ Optimise les performances en isolant le repaint
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: accent ? color : Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: color.withAlpha(accent ? 55 : 12),
+              blurRadius: 14,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(8),
@@ -472,6 +480,7 @@ class _StatCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
       ),
     );
   }
