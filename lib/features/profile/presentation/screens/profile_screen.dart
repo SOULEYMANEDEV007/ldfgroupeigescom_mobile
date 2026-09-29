@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/app_gradients.dart';
+import '../../../../core/constants/app_icons.dart';
+import '../../../../core/di/injection.dart';
+import '../../../../core/network/token_manager.dart';
+import '../../../../core/utils/app_dialogs.dart';
+import '../../../../core/utils/app_feedback.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -8,25 +14,62 @@ class ProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Mon Profil'),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: true,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
+      backgroundColor: AppColors.background,
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // ── HEADER UNIFORME AVEC DÉGRADÉ ──────────────────────────────
+          Container(
+            width: double.infinity,
+            decoration: const BoxDecoration(
+              gradient: AppGradients.primaryHeader,
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(24),
+                bottomRight: Radius.circular(24),
+              ),
+            ),
+            child: SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+                child: Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(AppIcons.back, color: Colors.white),
+                      onPressed: () => context.go('/dashboard'),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Mon Profil',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                    const Spacer(),
+                    // Actions si besoin
+                  ],
+                ),
+              ),
+            ),
+          ),
+          
+          // ── CONTENU ────────────────────────────────────────────────────
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16.0),
+              // ↑ STANDARD : padding 16px
+              child: Column(
           children: [
             // Avatar & Name
             const CircleAvatar(
               radius: 50,
               backgroundColor: AppColors.primary,
-              child: Icon(Icons.person, size: 50, color: Colors.white),
+              child: Icon(AppIcons.person, size: 50, color: Colors.white),
             ),
             const SizedBox(height: 16),
             Text(
-              'Kouassi Fabrice',
+              getIt<TokenManager>().getUserName() ?? 'Livreur LDF',
               style: Theme.of(
                 context,
               ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
@@ -38,28 +81,27 @@ class ProfileScreen extends StatelessWidget {
             // Options
             _buildProfileOption(
               context,
-              icon: Icons.history_rounded,
+              icon: AppIcons.history,
               title: 'Historique des livraisons',
-              onTap: () {
-                // TODO: Naviguer vers l'historique
-              },
+              onTap: () => context.push('/history'),
             ),
             const Divider(height: 1),
             _buildProfileOption(
               context,
-              icon: Icons.settings_rounded,
+              icon: AppIcons.settings,
               title: 'Paramètres du compte',
-              onTap: () {
-                // TODO: Naviguer vers les paramètres
-              },
+              onTap: () => context.push('/settings'),
             ),
             const Divider(height: 1),
             _buildProfileOption(
               context,
-              icon: Icons.help_outline_rounded,
+              icon: AppIcons.help,
               title: 'Support technique',
               onTap: () {
-                // TODO: Contacter le support
+                AppFeedback.info(
+                  context,
+                  'Appel du support LdF (+225 27 20 00 00 00)…',
+                );
               },
             ),
             const SizedBox(height: 40),
@@ -68,21 +110,41 @@ class ProfileScreen extends StatelessWidget {
             OutlinedButton.icon(
               style: OutlinedButton.styleFrom(
                 minimumSize: const Size(double.infinity, 56),
-                side: const BorderSide(color: Colors.redAccent),
-                foregroundColor: Colors.redAccent,
+                side: const BorderSide(color: AppColors.error, width: 1.5),
+                foregroundColor: AppColors.error,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
               ),
-              onPressed: () {
-                // TODO: Logique de déconnexion via BLoC/AuthRepository
-                context.go('/login');
+              onPressed: () async {
+                final confirmed = await AppDialogs.showConfirmationDialog(
+                  context,
+                  title: 'Déconnexion',
+                  message:
+                      'Êtes-vous sûr de vouloir vous déconnecter de votre session ? Vos données locales sont synchronisées.',
+                  confirmText: 'Se déconnecter',
+                  cancelText: 'Annuler',
+                  isDestructive: true,
+                );
+
+                if (confirmed && context.mounted) {
+                  await getIt<TokenManager>().clearSession();
+                  if (context.mounted) {
+                    context.go('/login');
+                  }
+                }
               },
-              icon: const Icon(Icons.logout_rounded),
+              icon: const Icon(AppIcons.logout),
               label: const Text(
                 'Se déconnecter',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
               ),
             ),
           ],
         ),
+      ),
+          ),
+        ],
       ),
     );
   }
@@ -105,7 +167,7 @@ class ProfileScreen extends StatelessWidget {
       ),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
       trailing: const Icon(
-        Icons.arrow_forward_ios_rounded,
+        AppIcons.chevronRight,
         size: 16,
         color: Colors.grey,
       ),

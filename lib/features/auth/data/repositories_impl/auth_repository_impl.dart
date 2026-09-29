@@ -13,9 +13,17 @@ class AuthRepositoryImpl implements AuthRepository {
   AuthRepositoryImpl(this.remoteDataSource);
 
   @override
-  Future<Either<String, User>> login(String email, String password) async {
+  Future<Either<String, User>> login(
+    String matricule,
+    String agence,
+    String password,
+  ) async {
     try {
-      final userModel = await remoteDataSource.login(email, password);
+      final userModel = await remoteDataSource.login(
+        matricule,
+        agence,
+        password,
+      );
       // Optionnel : Ici nous pourrions sauvegarder le token en cache (ex: SharedPreferences / FlutterSecureStorage)
       return Right(userModel);
     } catch (e) {

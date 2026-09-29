@@ -2,7 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:injectable/injectable.dart';
 
-import '../../domain/entities/delivery.dart';
+import '../../domain/entities/tour_entity.dart';
 import '../../domain/usecases/get_tours_usecase.dart';
 
 part 'tour_state.dart';

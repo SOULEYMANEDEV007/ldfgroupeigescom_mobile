@@ -1,6 +1,6 @@
 import 'package:dartz/dartz.dart';
-import '../entities/delivery.dart';
+import '../entities/tour_entity.dart';
 
 abstract class TourRepository {
-  Future<Either<String, List<Delivery>>> getTours();
+  Future<Either<String, List<TourEntity>>> getTours();
 }

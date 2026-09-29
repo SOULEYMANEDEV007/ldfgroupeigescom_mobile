@@ -14,8 +14,15 @@ class DashboardCubit extends Cubit<DashboardState> {
   DashboardCubit(this.getStatsUseCase) : super(DashboardInitial());
 
   Future<void> fetchStats() async {
+    // ⚠️ Vérifier si le cubit est fermé avant d'émettre
+    if (isClosed) return;
+    
     emit(DashboardLoading());
     final result = await getStatsUseCase();
+    
+    // ⚠️ Re-vérifier après l'opération asynchrone
+    if (isClosed) return;
+    
     result.fold(
       (error) => emit(DashboardError(error)),
       (stats) => emit(DashboardLoaded(stats)),
