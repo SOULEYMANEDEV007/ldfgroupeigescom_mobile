@@ -16,10 +16,18 @@ class ProfileScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // ── HEADER UNIFORME AVEC DÉGRADÉ ──────────────────────────────
           Container(
-            decoration: const BoxDecoration(gradient: AppGradients.primaryHeader),
+            width: double.infinity,
+            decoration: const BoxDecoration(
+              gradient: AppGradients.primaryHeader,
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(24),
+                bottomRight: Radius.circular(24),
+              ),
+            ),
             child: SafeArea(
               bottom: false,
               child: Padding(

@@ -66,6 +66,10 @@ dev_dependencies:
   flutter_launcher_icons: ^0.14.4
   build_runner: ^2.7.2
   injectable_generator: ^3.1.3
+
+dependency_overrides:
+  path_provider_android: 2.2.23
+
 flutter:
 
   # The following line ensures that the Material Icons font is
@@ -106,6 +110,6 @@ flutter:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/images/ldf_logo.jfif"
+  image_path: "assets/images/ldf_logo.png"
   adaptive_icon_background: "#FFFFFF"
-  adaptive_icon_foreground: "assets/images/ldf_logo.jfif"
+  adaptive_icon_foreground: "assets/images/ldf_logo.png"

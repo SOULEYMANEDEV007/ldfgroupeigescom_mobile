@@ -68,21 +68,16 @@ class DashboardView extends StatelessWidget {
                         children: [
                           // Salutation + cloche
                           Row(
-                            mainAxisAlignment:
-                                MainAxisAlignment.spaceBetween,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Column(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
                                     'Bonjour Kouassi 👋',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodyLarge
+                                    style: Theme.of(context).textTheme.bodyLarge
                                         ?.copyWith(
-                                          color:
-                                              Colors.white.withAlpha(180),
+                                          color: Colors.white.withAlpha(180),
                                         ),
                                   ),
                                   const SizedBox(height: 4),
@@ -141,7 +136,8 @@ class DashboardView extends StatelessWidget {
                               color: Colors.white.withAlpha(15),
                               borderRadius: BorderRadius.circular(18),
                               border: Border.all(
-                                  color: Colors.white.withAlpha(40)),
+                                color: Colors.white.withAlpha(40),
+                              ),
                             ),
                             child: Column(
                               children: [
@@ -151,8 +147,7 @@ class DashboardView extends StatelessWidget {
                                       padding: const EdgeInsets.all(8),
                                       decoration: BoxDecoration(
                                         color: AppColors.navBarYellow,
-                                        borderRadius:
-                                            BorderRadius.circular(10),
+                                        borderRadius: BorderRadius.circular(10),
                                       ),
                                       child: const Icon(
                                         AppIcons.truck,
@@ -177,8 +172,9 @@ class DashboardView extends StatelessWidget {
                                           Text(
                                             "TRN-2026-0830 • Aujourd'hui",
                                             style: TextStyle(
-                                              color: Colors.white
-                                                  .withAlpha(160),
+                                              color: Colors.white.withAlpha(
+                                                160,
+                                              ),
                                               fontSize: 11,
                                             ),
                                             maxLines: 1,
@@ -191,11 +187,14 @@ class DashboardView extends StatelessWidget {
                                       onTap: () => context.go('/tour'),
                                       child: Container(
                                         padding: const EdgeInsets.symmetric(
-                                            horizontal: 12, vertical: 5),
+                                          horizontal: 12,
+                                          vertical: 5,
+                                        ),
                                         decoration: BoxDecoration(
                                           color: AppColors.navBarYellow,
-                                          borderRadius:
-                                              BorderRadius.circular(20),
+                                          borderRadius: BorderRadius.circular(
+                                            20,
+                                          ),
                                         ),
                                         child: const Text(
                                           'Voir',
@@ -236,8 +235,7 @@ class DashboardView extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(6),
                                   child: LinearProgressIndicator(
                                     value: 2 / 6,
-                                    backgroundColor:
-                                        Colors.white.withAlpha(40),
+                                    backgroundColor: Colors.white.withAlpha(40),
                                     color: AppColors.navBarYellow,
                                     minHeight: 7,
                                   ),
@@ -257,7 +255,8 @@ class DashboardView extends StatelessWidget {
                     decoration: const BoxDecoration(
                       color: AppColors.background,
                       borderRadius: BorderRadius.vertical(
-                          top: Radius.circular(24)),
+                        top: Radius.circular(24),
+                      ),
                     ),
                     child: Transform.translate(
                       // Chevauche légèrement le header pour un effet immersif
@@ -271,9 +270,7 @@ class DashboardView extends StatelessWidget {
                             // ── Label stats ───────────────────────────────
                             Text(
                               'STATISTIQUES DU JOUR',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .labelSmall
+                              style: Theme.of(context).textTheme.labelSmall
                                   ?.copyWith(
                                     color: AppColors.textSecondary,
                                     fontWeight: FontWeight.bold,
@@ -292,6 +289,7 @@ class DashboardView extends StatelessWidget {
                                     icon: AppIcons.list,
                                     color: AppColors.accentBlue,
                                     bgColor: AppColors.accentBlueSoft,
+                                    accent: false,
                                   ),
                                 ),
                                 const SizedBox(width: 12),
@@ -302,7 +300,7 @@ class DashboardView extends StatelessWidget {
                                     icon: AppIcons.checkCircle,
                                     color: AppColors.success,
                                     bgColor: AppColors.successSoft,
-                                    accent: true,
+                                    accent: false,
                                   ),
                                 ),
                               ],
@@ -317,6 +315,7 @@ class DashboardView extends StatelessWidget {
                                     icon: AppIcons.clock,
                                     color: AppColors.warning,
                                     bgColor: AppColors.warningSoft,
+                                    accent: false,
                                   ),
                                 ),
                                 const SizedBox(width: 12),
@@ -327,6 +326,7 @@ class DashboardView extends StatelessWidget {
                                     icon: AppIcons.error,
                                     color: AppColors.error,
                                     bgColor: AppColors.errorSoft,
+                                    accent: false,
                                   ),
                                 ),
                               ],
@@ -337,9 +337,7 @@ class DashboardView extends StatelessWidget {
                             // ── Label actions rapides ─────────────────────
                             Text(
                               'ACTIONS RAPIDES',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .labelSmall
+                              style: Theme.of(context).textTheme.labelSmall
                                   ?.copyWith(
                                     color: AppColors.textSecondary,
                                     fontWeight: FontWeight.bold,
@@ -351,8 +349,7 @@ class DashboardView extends StatelessWidget {
                             // ── 3 actions rapides ─────────────────────────
                             IntrinsicHeight(
                               child: Row(
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.stretch,
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
                                   Expanded(
                                     child: _QuickActionButton(
@@ -366,8 +363,7 @@ class DashboardView extends StatelessWidget {
                                     child: _QuickActionButton(
                                       icon: AppIcons.history,
                                       label: 'Historique',
-                                      onTap: () =>
-                                          context.push('/history'),
+                                      onTap: () => context.push('/history'),
                                     ),
                                   ),
                                   const SizedBox(width: 12),
@@ -433,54 +429,45 @@ class _StatCard extends StatelessWidget {
           ],
         ),
         child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: accent ? Colors.white.withAlpha(30) : bgColor,
-              borderRadius: BorderRadius.circular(10),
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: accent ? Colors.white.withAlpha(30) : bgColor,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: accent ? Colors.white : color, size: 18),
             ),
-            child: Icon(icon,
-                color: accent ? Colors.white : color, size: 18),
-          ),
-          const SizedBox(width: 10),
-          // Expanded pour que le texte ne déborde pas sur petits écrans
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  count,
-                  style: Theme.of(context)
-                      .textTheme
-                      .headlineSmall
-                      ?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        fontSize: 22,
-                        color: accent
-                            ? Colors.white
-                            : AppColors.textPrimary,
-                      ),
-                ),
-                Text(
-                  title,
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodySmall
-                      ?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: accent
-                            ? Colors.white.withAlpha(200)
-                            : AppColors.textSecondary,
-                      ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+            const SizedBox(width: 10),
+            // Expanded pour que le texte ne déborde pas sur petits écrans
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    count,
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 22,
+                      color: accent ? Colors.white : AppColors.textPrimary,
+                    ),
+                  ),
+                  Text(
+                    title,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: accent
+                          ? Colors.white.withAlpha(200)
+                          : AppColors.textSecondary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
-      ),
+          ],
+        ),
       ),
     );
   }
@@ -524,10 +511,10 @@ class _QuickActionButton extends StatelessWidget {
             Text(
               label,
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
-                    fontSize: 11,
-                  ),
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+                fontSize: 11,
+              ),
               textAlign: TextAlign.center,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,

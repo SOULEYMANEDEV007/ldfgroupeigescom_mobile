@@ -80,7 +80,7 @@ class TourDetailScreen extends StatelessWidget {
                         Text(
                           tour.reference,
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.9),
+                            color: Colors.white.withValues(alpha: 0.9),
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
                           ),
@@ -88,7 +88,7 @@ class TourDetailScreen extends StatelessWidget {
                         Text(
                           ' · ',
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.6),
+                            color: Colors.white.withValues(alpha: 0.6),
                             fontSize: 13,
                           ),
                         ),
@@ -101,7 +101,7 @@ class TourDetailScreen extends StatelessWidget {
                         Text(
                           tour.vehiclePlate,
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.9),
+                            color: Colors.white.withValues(alpha: 0.9),
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
                           ),
@@ -109,14 +109,14 @@ class TourDetailScreen extends StatelessWidget {
                         Text(
                           ' · ',
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.6),
+                            color: Colors.white.withValues(alpha: 0.6),
                             fontSize: 13,
                           ),
                         ),
                         Text(
                           '$totalDeliveries livraison${totalDeliveries > 1 ? 's' : ''}',
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.9),
+                            color: Colors.white.withValues(alpha: 0.9),
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
                           ),
@@ -140,7 +140,7 @@ class TourDetailScreen extends StatelessWidget {
                 border: Border.all(color: AppColors.border, width: 0.8),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
+                    color: Colors.black.withValues(alpha: 0.04),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -249,7 +249,6 @@ class _DeliveryListCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDelivered = delivery.status == DeliveryStatus.delivered;
     final isInProgress = delivery.status == DeliveryStatus.inProgress;
-    final isPending = delivery.status == DeliveryStatus.pending;
 
     return RepaintBoundary(
       // ↑ Optimise les performances en isolant le repaint
@@ -266,7 +265,7 @@ class _DeliveryListCard extends StatelessWidget {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),

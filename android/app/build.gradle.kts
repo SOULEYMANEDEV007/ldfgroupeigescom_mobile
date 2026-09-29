@@ -6,8 +6,7 @@ plugins {
 
 android {
     namespace = "com.example.ldfgroupeigescom_mobile"
-    compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    compileSdk = 35  // build-tools 35.0.1 installé localement
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -17,10 +16,9 @@ android {
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.example.ldfgroupeigescom_mobile"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
+        // Valeurs épinglées aux SDK/build-tools installés localement (offline)
+        minSdk = flutter.minSdkVersion              // API 23 = Android 6.0 Marshmallow
+        targetSdk = 35           // build-tools 35.0.1 installé
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
@@ -30,6 +28,12 @@ android {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
+        }
+    }
+
+    packaging {
+        jniLibs {
+            keepDebugSymbols.add("**/*.so")
         }
     }
 }
