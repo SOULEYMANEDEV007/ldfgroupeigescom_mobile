@@ -111,5 +111,5 @@ flutter_launcher_icons:
   android: true
   ios: true
   image_path: "assets/images/ldf_logo.png"
-  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_background: "#007A33"
   adaptive_icon_foreground: "assets/images/ldf_logo.png"

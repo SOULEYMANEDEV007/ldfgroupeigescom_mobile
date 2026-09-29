@@ -214,6 +214,17 @@ flutter run
   - Mise à jour de [GEMINI.md](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/GEMINI.md).
 - **Statut** : Règle gravée dans la mémoire permanente du projet et immédiatement opérationnelle.
 
+### Suite Session du 29/09/2026 — Renommage de l'App & Génération de l'Icône HD sans Bords Blancs
+- **Demande du Développeur** :
+  1. Renommer l'application en « IGESCOM Mobile ».
+  2. Remplacer l'icône de l'application par [ldf_logo.png](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/assets/images/ldf_logo.png) en supprimant tous les bords/coins blancs disgracieux.
+- **Actions réalisées** :
+  1. Renommage en `IGESCOM Mobile` effectué dans [AndroidManifest.xml](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/android/app/src/main/AndroidManifest.xml), [Info.plist](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/ios/Runner/Info.plist) et [main.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/main.dart).
+  2. Détourage complet des coins et pixels blancs de [ldf_logo.png](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/assets/images/ldf_logo.png) (transparence Alpha = 0) et suréchantillonnage haute résolution en **512×512** (Format 32-bit ARGB).
+  3. Harmonisation de l'icône adaptative Android dans [pubspec.yaml](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/pubspec.yaml) avec le fond vert officiel LDF `adaptive_icon_background: "#007A33"` au lieu du fond blanc `#FFFFFF`.
+  4. Exécution de `dart run flutter_launcher_icons` : génération réussie de toutes les densités mipmap Android et iOS.
+  5. Validation `flutter analyze` : 0 issue.
+
 ---
 
 ## 7. 🌿 Informations Git

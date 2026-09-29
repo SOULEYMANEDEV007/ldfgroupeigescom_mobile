@@ -5,6 +5,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'core/routing/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'core/di/injection.dart';
+
 // import 'core/offline/offline.dart';
 
 void main() async {
@@ -23,7 +24,7 @@ void main() async {
 }
 
 /// Initialise Hive et enregistre tous les adapters nécessaires.
-/// 
+///
 /// IMPORTANT : Cette fonction doit être appelée AVANT configureDependencies()
 /// car les modules DI ont besoin d'accéder aux boxes Hive.
 // Future<void> _initializeHive() async {
@@ -62,7 +63,7 @@ class LdfMobileApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: 'LdF Igescom Mobile',
+      title: 'IGESCOM Mobile',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       routerConfig: AppRouter.router,
