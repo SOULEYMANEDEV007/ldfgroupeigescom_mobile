@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:injectable/injectable.dart';
 
+import '../config/app_config.dart';
 import 'auth_interceptor.dart';
 
 @module
@@ -9,10 +10,9 @@ abstract class NetworkModule {
   Dio getDio(AuthInterceptor authInterceptor) {
     final dio = Dio(
       BaseOptions(
-        // TODO: Mettre l'URL réelle de l'API de IGS Com ici
-        baseUrl: 'https://api.ldfgroupe.com/v1',
-        connectTimeout: const Duration(seconds: 15),
-        receiveTimeout: const Duration(seconds: 15),
+        baseUrl: AppConfig.apiBaseUrl,
+        connectTimeout: AppConfig.connectTimeout,
+        receiveTimeout: AppConfig.receiveTimeout,
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',

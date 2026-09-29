@@ -312,6 +312,7 @@ class DashboardView extends StatelessWidget {
                                   child: _StatCard(
                                     title: 'En attente',
                                     count: '3',
+
                                     icon: AppIcons.clock,
                                     color: AppColors.warning,
                                     bgColor: AppColors.warningSoft,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 // import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
@@ -10,6 +11,9 @@ import 'core/di/injection.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Chargement des variables d'environnement (.env)
+  await dotenv.load(fileName: ".env");
 
   // Initialiser les données de localisation (nécessaire pour DateFormat avec locale)
   await initializeDateFormatting('fr_FR');

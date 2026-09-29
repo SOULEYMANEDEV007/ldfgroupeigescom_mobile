@@ -225,6 +225,17 @@ flutter run
   4. Exécution de `dart run flutter_launcher_icons` : génération réussie de toutes les densités mipmap Android et iOS.
   5. Validation `flutter analyze` : 0 issue.
 
+### Suite Session du 29/09/2026 — Intégration de `flutter_dotenv` (.env) & `AppConfig`
+- **Demande du Développeur** : Mettre en place un fichier `.env` pour externaliser les variables d'environnement (URL API, timeouts, configuration).
+- **Actions réalisées** :
+  1. Ajout de `flutter_dotenv: ^5.2.1` et déclaration de `- .env` dans les assets de [pubspec.yaml](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/pubspec.yaml).
+  2. Ajout de `.env` dans [.gitignore](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/.gitignore) avec exception pour [.env.example](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/.env.example).
+  3. Création des fichiers [.env](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/.env) et [.env.example](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/.env.example) (`API_BASE_URL`, `CONNECT_TIMEOUT`, `RECEIVE_TIMEOUT`, `APP_ENV`, `APP_NAME`).
+  4. Création de la classe de configuration typée [AppConfig](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/core/config/app_config.dart).
+  5. Initialisation de `dotenv.load(fileName: ".env")` dans [main.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/main.dart).
+  6. Remplacement de l'URL en dur et des timeouts par `AppConfig` dans [dio_client.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/core/network/dio_client.dart).
+  7. Validation `flutter analyze` : **0 issue** (No issues found).
+
 ---
 
 ## 7. 🌿 Informations Git
