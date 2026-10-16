@@ -8,12 +8,12 @@ abstract class LoginEvent extends Equatable {
 }
 
 class LoginSubmitted extends LoginEvent {
-  final String matricule;
-  final String agence;
+  /// Identifiant de connexion (`nom_util`)
+  final String username;
   final String password;
 
-  const LoginSubmitted(this.matricule, this.agence, this.password);
+  const LoginSubmitted(this.username, this.password);
 
   @override
-  List<Object> get props => [matricule, agence, password];
+  List<Object> get props => [username, password];
 }

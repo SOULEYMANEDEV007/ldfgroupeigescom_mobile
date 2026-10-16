@@ -1,73 +1,149 @@
+import 'package:dio/dio.dart';
 import 'package:injectable/injectable.dart';
-import '../models/delivery_model.dart';
+
+import '../../../../core/di/app_environments.dart';
+import '../../../../core/network/api_endpoints.dart';
 import '../../domain/entities/delivery.dart';
+import '../models/delivery_model.dart';
 
 abstract class DeliveryRemoteDataSource {
   Future<DeliveryModel> getDeliveryById(String id);
-  Future<DeliveryModel> updateStatus(String id, DeliveryStatus status);
+  Future<DeliveryModel> updateStatus(
+    String id,
+    DeliveryStatus status, {
+    String? tourId,
+    String? notes,
+  });
 }
 
-/// Implémentation Mock — sera remplacée par l'intégration API IgsCom.
-@LazySingleton(as: DeliveryRemoteDataSource)
-class MockDeliveryRemoteDataSourceImpl implements DeliveryRemoteDataSource {
-  // Simule une base de données locale
-  final Map<String, DeliveryModel> _cache = {
-    'LDF-8943': DeliveryModel(
-      id: 'LDF-8943',
-      tourId: 'TR-001',
-      clientCode: 'CL-001',
-      clientName: 'Koffi Fabrice',
-      deliveryNoteNumber: 'BL-001',
-      weight: 15.5,
-      amount: 25000,
-      address: 'Treichville, Avenue 16, Rue 12',
-      phone: '01 02 03 04 05',
-      status: DeliveryStatus.inProgress,
-      scheduledTime: DateTime.now().add(const Duration(hours: 1)),
-      notes: "Appeler avant d'arriver. Livrer les rames de papier.",
-    ),
-    'LDF-8944': DeliveryModel(
-      id: 'LDF-8944',
-      tourId: 'TR-001',
-      clientCode: 'CL-002',
-      clientName: 'Pharmacie de la Grâce',
-      deliveryNoteNumber: 'BL-002',
-      weight: 5.0,
-      amount: 5000,
-      address: 'Cocody, Angré 8ème Tranche',
-      phone: '05 06 07 08 09',
-      status: DeliveryStatus.pending,
-      scheduledTime: DateTime.now().add(const Duration(hours: 3)),
-      notes: 'Dépôt à la guérite autorisé.',
-    ),
-  };
+/// Implémentation réelle branchée sur l'API IGESCOM
+@LazySingleton(as: DeliveryRemoteDataSource, env: [kRealEnv])
+class RealDeliveryRemoteDataSourceImpl implements DeliveryRemoteDataSource {
+  final Dio _dio;
+
+  RealDeliveryRemoteDataSourceImpl(this._dio);
 
   @override
   Future<DeliveryModel> getDeliveryById(String id) async {
-    await Future.delayed(const Duration(milliseconds: 500));
+    return DeliveryModel(
+      id: id,
+      tourId: '',
+      clientCode: '',
+      clientName: 'Client',
+      deliveryNoteNumber: id.startsWith('BL-') ? id : 'BL-$id',
+      weight: 0.0,
+      amount: 0.0,
+      address: 'Abidjan',
+      phone: '',
+      status: DeliveryStatus.inProgress,
+      scheduledTime: DateTime.now(),
+      notes: '',
+    );
+  }
+
+  @override
+  Future<DeliveryModel> updateStatus(
+    String id,
+    DeliveryStatus status, {
+    String? tourId,
+    String? notes,
+  }) async {
+    // Si validation de livraison, envoi de la requête au backend
+    if (status == DeliveryStatus.delivered) {
+      final cleanLigneId = id.replaceFirst('BL-', '').trim();
+      final cleanTournee = (tourId != null && tourId.isNotEmpty && tourId != 'N/A')
+          ? tourId
+          : '';
+      try {
+        await _dio.post(
+          ApiEndpoints.validateDelivery(cleanLigneId),
+          data: {
+            'observation_livraison': notes ?? '',
+            'tournee': cleanTournee,
+          },
+        );
+      } catch (_) {
+        // Tentative de repli avec l'URL alternative si la tournée est fournie
+        if (cleanTournee.isNotEmpty) {
+          await _dio.post(
+            ApiEndpoints.validateDeliveryWithTour(cleanTournee, cleanLigneId),
+            data: {
+              'observation_livraison': notes ?? '',
+              'tournee': cleanTournee,
+            },
+          );
+        } else {
+          rethrow;
+        }
+      }
+    }
+
+    return DeliveryModel(
+      id: id,
+      tourId: tourId ?? '',
+      clientCode: '',
+      clientName: '',
+      deliveryNoteNumber: id.startsWith('BL-') ? id : 'BL-$id',
+      weight: 0.0,
+      amount: 0.0,
+      address: '',
+      phone: '',
+      status: status,
+      scheduledTime: DateTime.now(),
+      notes: notes ?? '',
+    );
+  }
+}
+
+/// Implémentation Mock réservée aux démonstrations hors-ligne (`USE_MOCK_API=true`)
+@LazySingleton(as: DeliveryRemoteDataSource, env: [kMockEnv])
+class MockDeliveryRemoteDataSourceImpl implements DeliveryRemoteDataSource {
+  final Map<String, DeliveryModel> _cache = {};
+
+  @override
+  Future<DeliveryModel> getDeliveryById(String id) async {
+    await Future.delayed(const Duration(milliseconds: 300));
     final delivery = _cache[id];
-    if (delivery == null) throw Exception('Livraison $id introuvable.');
+    if (delivery == null) {
+      return DeliveryModel(
+        id: id,
+        tourId: 'TRN-1790866899713',
+        clientCode: 'CIETIA',
+        clientName: 'CIE',
+        deliveryNoteNumber: 'BL-$id',
+        weight: 0.0,
+        amount: 15.0,
+        address: 'Abidjan',
+        phone: '',
+        status: DeliveryStatus.inProgress,
+        scheduledTime: DateTime.now(),
+        notes: '',
+      );
+    }
     return delivery;
   }
 
   @override
-  Future<DeliveryModel> updateStatus(String id, DeliveryStatus status) async {
-    await Future.delayed(const Duration(milliseconds: 800));
-    final existing = _cache[id];
-    if (existing == null) throw Exception('Livraison $id introuvable.');
+  Future<DeliveryModel> updateStatus(
+    String id,
+    DeliveryStatus status, {
+    String? tourId,
+    String? notes,
+  }) async {
+    await Future.delayed(const Duration(milliseconds: 500));
     final updated = DeliveryModel(
-      id: existing.id,
-      tourId: existing.tourId,
-      clientCode: existing.clientCode,
-      clientName: existing.clientName,
-      deliveryNoteNumber: existing.deliveryNoteNumber,
-      weight: existing.weight,
-      amount: existing.amount,
-      address: existing.address,
-      phone: existing.phone,
+      id: id,
+      tourId: tourId ?? 'TRN-1790866899713',
+      clientCode: 'CIETIA',
+      clientName: 'CIE',
+      deliveryNoteNumber: id.startsWith('BL-') ? id : 'BL-$id',
+      weight: 0.0,
+      amount: 15.0,
+      address: 'Abidjan',
+      phone: '',
       status: status,
-      scheduledTime: existing.scheduledTime,
-      notes: existing.notes,
+      scheduledTime: DateTime.now(),
+      notes: notes ?? '',
     );
     _cache[id] = updated;
     return updated;

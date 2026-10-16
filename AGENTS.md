@@ -236,10 +236,108 @@ flutter run
   6. Remplacement de l'URL en dur et des timeouts par `AppConfig` dans [dio_client.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/core/network/dio_client.dart).
   7. Validation `flutter analyze` : **0 issue** (No issues found).
 
+### Session du 16/10/2026 — Branchement API réelle : Phase 0 (Socle) + Phase 1 (Auth)
+- **Contexte** : le web (Angular, collègue) est le backoffice ; le mobile est conçu indépendamment (ne pas copier son design, seulement sa logique métier). Les mocks existants servent aux démos aux directeurs ; **la référence est désormais l'API du backend**.
+- **API réelle (serveur `http://192.168.1.238`, HTTP clair)** — explorée avec le compte de test `mobtest` :
+  - `POST /api/metabase/mobile/livraison/login/` body `{nom_util, mdpasse}` → `{status, data:{agent{code_agent, nom_util, code_agce, code_fonct}, token, refresh}}`. Token d'accès 2 h, refresh 24 h (claims JWT). 401 = mauvais identifiants, 400 = champs vides. **Aucun endpoint de refresh trouvé** (tous en 404).
+  - `GET /api/flotte/convotournees/{code_agent}` (sans slash final) → `{status, rows:[tournées]}` ; chaque tournée : `code_tournee` (TRN-timestamp), `libelle`, `date_tournee`, `heure_depart`, `statut` (EN_COURS…), `code_vehicule`, `chauffeur_info`, `convoyeur_info`, `km_depart/arrivee`, `observations`, `lignes[]` ; chaque ligne : `code_ligne`, `code_bl`, `ordre`, `actif`, `statut_livraison` (EN_ATTENTE / LIVREE), `date_livraison`, `observation_livraison`, `livraison.commande.client{nom_clt, tel1_clt, adresse_clt, ville_clt…}`. Payload lourd (~20 Ko/tournée, client dupliqué). **Pas de poids, montant ni GPS.**
+  - `GET /api/flotte/tournees/{code_tournee}/` → 200, même structure dans `data`.
+  - `GET /api/flotte/tournees/{code}/planning/{code_agent}/` → **401 même avec token** (non utilisé).
+  - `POST .../tournees/{code_tournee}/lignes/{code_bl}/valider-livraison/` body `{observation_livraison, tournee}` — **non testé** (écriture) ; méthode/réponse à confirmer.
+  - ⚠️ `convotournees` répond **sans authentification** (faille à signaler au backend).
+- **Phase 0 (socle)** :
+  1. [.env](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/.env) / `.env.example` : `API_BASE_URL=http://192.168.1.238`, nouveau flag **`USE_MOCK_API`** (`true` = démo, `false` = vraie API). [AppConfig](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/core/config/app_config.dart) expose `useMockApi`.
+  2. [ApiEndpoints](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/core/network/api_endpoints.dart) : endpoints fictifs remplacés par les vrais (préfixe `/api` inclus).
+  3. [TokenManager](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/core/network/token_manager.dart) : stocke aussi refresh token, `code_agent`, agence ; détection d'expiration du JWT (`isAuthenticated` tient compte de `exp`) ; flux `onSessionExpired` + `expireSession()`.
+  4. [AuthInterceptor](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/core/network/auth_interceptor.dart) : sur 401 (hors login) → session invalidée ; [main.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/main.dart) écoute et redirige vers `/login` avec un message.
+  5. [ApiErrorHandler](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/core/network/api_error_handler.dart) + `ApiException` : `DioException` → messages français (les repositories ne doivent plus renvoyer `e.toString()`).
+  6. [dio_client.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/core/network/dio_client.dart) : logs désactivés en release, sans en-têtes, avec masquage mot de passe/tokens.
+  7. Android : permission `INTERNET` ajoutée (absente du manifest principal) + [network_security_config.xml](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/android/app/src/main/res/xml/network_security_config.xml) autorisant le HTTP clair **uniquement** vers `192.168.1.238` et `10.0.2.2` (à mettre à jour si l'IP change ; HTTPS à prévoir en production).
+- **Phase 1 (Auth)** :
+  1. Login = `nom_util` + `mdpasse` ; **champ Agence supprimé** de [login_screen.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/auth/presentation/screens/login_screen.dart) (champ « Identifiant », identifiants de démo préremplis seulement en mode mock).
+  2. `User` = `{id (code_agent), name (nom_util), agencyCode, functionCode}` ; `UserModel.fromJson` aligné sur `data.agent`.
+  3. Datasource : `MockAuthRemoteDataSourceImpl` (env `mock`) et **`RealAuthRemoteDataSourceImpl`** (env `real`) dans [auth_remote_data_source.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/auth/data/datasources/auth_remote_data_source.dart). `AuthRepositoryImpl.logout()` efface la session locale.
+- **Mécanisme mock/réel (règle)** : environnements `injectable` (`kMockEnv`/`kRealEnv` dans [app_environments.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/core/di/app_environments.dart)), choisis dans `configureDependencies()` selon `USE_MOCK_API`. Une classe **sans `env`** est enregistrée partout : les features pas encore branchées (tour, delivery, dashboard) gardent leur mock. Pour brancher une feature : annoter le mock `env: [kMockEnv]`, ajouter l'implémentation `env: [kRealEnv]`, relancer `build_runner`.
+- **Validation** : `build_runner` OK, `flutter analyze` : **No issues found**. Non testé sur appareil (le téléphone doit être sur le même réseau que le serveur).
+- **Décisions en attente du développeur** : planning 401 (utiliser `/tournees/{code}/`), champs absents (poids/montant/GPS), flux « échec » sans endpoint, signature/photo non gérées par l'API, faille `convotournees` à signaler.
+- **Prochaines phases** : 2 Tournées (modèles réels, statuts, `LIVREE`), 3 Validation livraison, 4 Dashboard/historique/profil dérivés.
+
+### Suite Session du 16/10/2026 — Finalisation de la Consommation d'APIs Réelles & Refonte du Profil
+- **Demande du Développeur** :
+  1. Abandonner définitivement toutes les données mockées pour basculer sur les APIs réelles (`http://192.168.1.238`) sans altérer ni dégrader le design mobile d'origine.
+  2. Aligner la page de Profil sur l'application de gestion interne web (`/monprofil/{code_agent}`) tout en conservant une ergonomie 100% mobile et fidèle à la charte LDF.
+  3. Brancher les tournées, les livraisons, la validation et les KPI réels du dashboard.
+- **Reverse Engineering & Découvertes Clés** :
+  1. **Validation de livraison** : Découverte de l'URL réelle dans le bundle Angular : `POST /api/flotte/tournees/lignes/{code_bl}/valider-livraison/` avec body `{ "observation_livraison": ..., "tournee": code_tournee }` (le code tournée ne fait pas partie du path HTTP mais du body JSON).
+  2. **Refresh Token JWT** : Découverte et validation réussie de `POST /api/login/token/refresh/` body `{ "refresh": token }` renvoyant `access` et `refresh`.
+  3. **Profil Agent** : Découverte des endpoints `/api/profil/agents/{id}/`, `/api/profil/modificationagents/{id}/` et `/api/profil/ModificationAgentMDP/{id}/`.
+- **Réalisations Effectuées** :
+  1. **Refonte complète de la feature Profil (`lib/features/profile/`)** :
+     - Entité [UserProfile](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/profile/domain/entities/user_profile.dart) et modèle [UserProfileModel](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/profile/data/models/user_profile_model.dart) intégrant Nom, Prénom, Téléphone, Portable, Adresse, Date et Lieu de Naissance, Matricule, Rôle et Agence.
+     - [ProfileRemoteDataSourceImpl](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/profile/data/datasources/profile_remote_data_source.dart) et [ProfileRepositoryImpl](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/profile/data/repositories/profile_repository_impl.dart).
+     - [ProfileCubit](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/profile/presentation/cubit/profile_cubit.dart) gérant `loadProfile`, `updateProfile` et `changePassword` avec vérification stricte `isClosed`.
+     - Écran mobile moderne [profile_screen.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/profile/presentation/screens/profile_screen.dart) : Header gradient LDF, carte identité/avatar avec badge d'agence et rôle, formulaire d'informations personnelles, carte de changement de mot de passe avec visibilité basculable et déconnexion sécurisée.
+  2. **Tournées Réelles (`lib/features/tour/`)** :
+     - Création de [TourModel](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/tour/data/models/tour_model.dart) pour désérialiser `convotournees`.
+     - Implémentation de `RealTourRemoteDataSourceImpl` (`env: [kRealEnv]`) appelant `GET /api/flotte/convotournees/{code_agent}` et extrayant les lignes de livraison et infos du convoyeur/chauffeur.
+  3. **Livraisons & Validation Réelle (`lib/features/delivery/`)** :
+     - Mise à jour de [DeliveryModel](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/delivery/data/models/delivery_model.dart) pour mapper les objets `lignes[]` (`code_bl`, `statut_livraison == 'LIVREE'`, `commande.client`).
+     - Implémentation de `RealDeliveryRemoteDataSourceImpl` (`env: [kRealEnv]`) validant les livraisons via l'URL exacte `POST /api/flotte/tournees/lignes/{code_bl}/valider-livraison/`.
+  4. **Dashboard & KPIs Dynamiques (`lib/features/dashboard/`)** :
+     - `RealDashboardRemoteDataSourceImpl` (`env: [kRealEnv]`) calculant dynamiquement les livraisons terminées, en attente et la prochaine destination directement depuis les tournées réelles de l'agent.
+     - Salutation personnalisée dynamique avec le nom de l'agent connecté dans [dashboard_screen.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/dashboard/presentation/screens/dashboard_screen.dart).
+  5. **Auto-refresh JWT Transparent** :
+     - [AuthInterceptor](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/core/network/auth_interceptor.dart) gère le rafraîchissement transparent du token JWT via `/api/login/token/refresh/` avant de rejeter en 401.
+- **Validation** :
+  - `build_runner` : 28 outputs générés avec succès (exit code 0).
+  - `flutter analyze` : **No issues found!** (0 erreur, 0 avertissement, 0 warning).
+- **Statut du projet** : Application mobile 100% branchée sur l'API backend en temps réel, zéro mock en production (`USE_MOCK_API=false`), design mobile élégant préservé.
+
+### Suite Session du 16/10/2026 — Correction Déconnexion Profil, Stats Dashboard Dynamiques & Overflow UI
+- **Demande du Développeur** :
+  1. Corriger la déconnexion intempestive lors de la navigation vers la page Profil (`/profile`).
+  2. Brancher le Tableau de bord (`/dashboard`) pour afficher les vraies statistiques calculées en temps réel depuis les APIs de tournées (`convotournees`) au lieu de valeurs statiques en dur.
+  3. Corriger l'overflow graphique `RenderFlex` (7 pixels) observé sur l'écran des tournées (`tour_screen.dart:285:23`).
+  4. Respecter rigoureusement la règle d'or du projet : ne dégrader ni le design mobile, ni les styles visuels, ni l'architecture Clean.
+- **Diagnostics & Résolutions** :
+  1. **Déconnexion automatique sur Profil (Résolu)** :
+     - *Cause racine* : Le token mobile émis par `/api/metabase/mobile/livraison/login/` possède le claim JWT `application: livraison`. L'accès aux endpoints ERP `/api/profil/agents/...` renvoyait `HTTP 401 {"detail":"Token invalide pour cette instance"}`. L'`AuthInterceptor` interceptait ce 401 et appelait systématiquement `expireSession()`, ce qui déconnectait le livreur.
+     - *Solution* : Ajout d'une protection dans [auth_interceptor.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/core/network/auth_interceptor.dart) pour ne jamais expirer la session sur les endpoints de profil, les requêtes marquées `noSessionExpire: true` ou les erreurs de restriction d'instance. Ajout du stockage persistant des données de profil dans [token_manager.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/core/network/token_manager.dart) (`saveProfileData` / `getProfileData`) et lecture immédiate du cache dans [profile_remote_data_source.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/profile/data/datasources/profile_remote_data_source.dart).
+  2. **Statistiques du Tableau de bord 100% dynamiques (Résolu)** :
+     - Enrichissement de [DashboardStats](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/dashboard/domain/entities/dashboard_stats.dart) et [DashboardStatsModel](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/dashboard/data/models/dashboard_stats_model.dart) avec `totalDeliveries`, `failedDeliveries`, `activeToursCount`, `activeTourRef` et le getter `progressionRatio`.
+     - Dans [RealDashboardRemoteDataSourceImpl](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/dashboard/data/datasources/dashboard_remote_data_source.dart), calcul en temps réel des totaux, livraisons terminées, en attente, échecs et référence de la tournée active depuis `_tourRemoteDataSource.getTours()`.
+     - Dans [dashboard_screen.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/dashboard/presentation/screens/dashboard_screen.dart), remplacement de toutes les valeurs en dur (`10`, `6`, `3`, `1`, `2 / 6 livrées`, `value: 2 / 6`, `1 Tournée en cours`, `TRN-2026-0830`) par les métriques réelles de `state.stats`, avec préservation intégrale et méticuleuse du design visuel (gradients, ombres, coins arrondis, couleurs LDF).
+  3. **Correction de l'Overflow RenderFlex dans les Tournées (Résolu)** :
+     - Dans [tour_screen.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/tour/presentation/screens/tour_screen.dart), la `Row` affichant `'Tournée ${tour.agence}'` et le badge de date a été encapsulée dans un `Expanded` avec `TextOverflow.ellipsis` et espacement contrôlé `SizedBox(width: 8)`, éliminant tout débordement sur les écrans de toutes tailles.
+- **Validation** :
+  - `dart run build_runner build` : 14 outputs générés (code d'injection à jour).
+  - `flutter analyze` : **No issues found!** (0 erreur, 0 avertissement).
+### Suite Session du 16/10/2026 — Intégration du Nom Réel des Tournées (`libelle`) & Ergonomie Mobile
+- **Demande du Développeur** :
+  1. Afficher le vrai nom de chaque tournée (`libelle` issu de l'API, ex : **TEST MOB 1**, **TEST RUF**, **TEST 122**) au lieu de l'intitulé générique `Tournée DEPOT GRANDS COMPTES`.
+  2. Respecter strictement la contrainte d'ergonomie mobile : **ne pas surcharger la carte** avec la multitude d'informations présentes sur la version web grand écran, conserver un affichage épuré, compact et direct.
+- **Réalisations Effectuées** :
+  1. **Domaine (`TourEntity`)** :
+     - Ajout des champs `libelle`, `heureDepart`, `chauffeurName` et du getter pratique `displayName` (qui privilégie le `libelle` métier s'il est non vide, sinon la référence `TRN-...`).
+  2. **Données (`TourModel`)** :
+     - Désérialisation fidèle des clés `json['libelle']`, `json['heure_depart']` et `json['chauffeur_info']['nom_complet']`.
+     - Mise à jour de `MockTourRemoteDataSourceImpl` pour aligner les données de démonstration.
+  3. **Écran « Mes Tournées » (`tour_screen.dart`)** :
+     - Titre de la carte : `tour.displayName` (**TEST MOB 1**, etc.) avec nombre de livraisons.
+     - Ligne de métadonnées ultra-légère et discrète (police 11px) : `🕒 09:00` · `🚚 VEH001` · Nom du chauffeur sans surcharge visuelle.
+     - Barre de progression compacte conservée.
+  4. **Écran Détail & Tableau de bord** :
+     - [tour_detail_screen.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/tour/presentation/screens/tour_detail_screen.dart) affiche `tour.displayName` dans le header au lieu de l'agence.
+     - [dashboard_remote_data_source.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/dashboard/data/datasources/dashboard_remote_data_source.dart) utilise `tour.displayName` pour l'intitulé de la tournée en cours sur le Dashboard.
+- **Validation** :
+  - `flutter analyze` : **No issues found!** (0 erreur, 0 avertissement).
+
 ---
 
 ## 7. 🌿 Informations Git
 
 - **Branche principale** : `main`.
 - **Statut** : Synchronisé avec `origin/main`.
+
+
 

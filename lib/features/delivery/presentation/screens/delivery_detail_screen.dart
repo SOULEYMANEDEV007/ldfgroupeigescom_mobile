@@ -10,6 +10,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_gradients.dart';
 import '../../../../core/constants/app_icons.dart';
 import '../../../../core/di/injection.dart';
+import '../../../../core/utils/app_dialogs.dart';
 import '../../../../core/utils/app_feedback.dart';
 import '../../../../core/services/location_service.dart';
 import '../../domain/entities/delivery.dart';
@@ -39,8 +40,8 @@ class _DeliveryDetailView extends StatelessWidget {
     return BlocListener<DeliveryCubit, DeliveryState>(
       listener: (context, state) {
         if (state is DeliveryUpdated) {
-          AppFeedback.success(context, 'Tournée démarrée !');
-          context.pop();
+          AppFeedback.success(context, 'Livraison confirmée avec succès');
+          context.pop(true);
         }
         if (state is DeliveryError) {
           AppFeedback.error(context, state.message);
@@ -587,13 +588,54 @@ class _StickyActionBar extends StatelessWidget {
               ),
             ],
           ),
-          child: delivery.status == DeliveryStatus.pending
-              ? ElevatedButton.icon(
+          child: Row(
+            children: [
+              OutlinedButton.icon(
+                onPressed: isLoading
+                    ? null
+                    : () => context.push(
+                        '/delivery-failure',
+                        extra: delivery,
+                      ),
+                icon: const Icon(AppIcons.alertTriangle, size: 17),
+                label: const Text('Signaler'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.error,
+                  side: const BorderSide(
+                    color: AppColors.error,
+                    width: 1.5,
+                  ),
+                  minimumSize: const Size(0, 54),
+                  padding: const EdgeInsets.symmetric(horizontal: 18),
+                  textStyle: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: ElevatedButton.icon(
                   onPressed: isLoading
                       ? null
-                      : () => context.read<DeliveryCubit>().startDelivery(
-                          delivery,
-                        ),
+                      : () async {
+                          final blNumber = delivery.deliveryNoteNumber
+                              .replaceFirst('BL-', '')
+                              .trim();
+                          final confirmed =
+                              await AppDialogs.showDeliveryConfirmationDialog(
+                            context,
+                            blNumber: blNumber,
+                          );
+                          if (confirmed && context.mounted) {
+                            context
+                                .read<DeliveryCubit>()
+                                .validateDelivery(delivery);
+                          }
+                        },
                   icon: isLoading
                       ? const SizedBox(
                           width: 18,
@@ -603,76 +645,26 @@ class _StickyActionBar extends StatelessWidget {
                             color: Colors.white,
                           ),
                         )
-                      : const Icon(AppIcons.play),
+                      : const Icon(AppIcons.checkCircle, size: 18),
                   label: Text(
-                    isLoading ? 'Démarrage...' : 'Démarrer la livraison',
+                    isLoading ? 'Validation...' : 'Valider la livraison',
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.navBarYellow,
-                    foregroundColor: AppColors.primaryDark,
-                    minimumSize: const Size(double.infinity, 54),
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size(0, 54),
                     textStyle: const TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: 15,
+                      fontSize: 14,
                     ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
                     ),
                   ),
-                )
-              : Row(
-                  children: [
-                    OutlinedButton.icon(
-                      onPressed: isLoading
-                          ? null
-                          : () => context.push(
-                              '/delivery-failure',
-                              extra: delivery,
-                            ),
-                      icon: const Icon(AppIcons.alertTriangle, size: 17),
-                      label: const Text('Signaler'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.error,
-                        side: const BorderSide(
-                          color: AppColors.error,
-                          width: 1.5,
-                        ),
-                        minimumSize: const Size(0, 54),
-                        padding: const EdgeInsets.symmetric(horizontal: 18),
-                        textStyle: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: isLoading
-                            ? null
-                            : () => context.push(
-                                '/delivery-validation',
-                                extra: delivery,
-                              ),
-                        icon: const Icon(AppIcons.checkCircle, size: 18),
-                        label: const Text('Confirmer comme Livré'),
-                        style: ElevatedButton.styleFrom(
-                          minimumSize: const Size(0, 54),
-                          textStyle: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
                 ),
+              ),
+            ],
+          ),
         );
       },
     );

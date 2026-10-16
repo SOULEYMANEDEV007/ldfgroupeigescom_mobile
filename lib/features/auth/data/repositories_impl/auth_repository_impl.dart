@@ -1,6 +1,8 @@
 import 'package:dartz/dartz.dart';
 import 'package:injectable/injectable.dart';
 
+import '../../../../core/network/api_error_handler.dart';
+import '../../../../core/network/token_manager.dart';
 import '../../domain/entities/user.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../datasources/auth_remote_data_source.dart';
@@ -9,32 +11,25 @@ import '../datasources/auth_remote_data_source.dart';
 @LazySingleton(as: AuthRepository)
 class AuthRepositoryImpl implements AuthRepository {
   final AuthRemoteDataSource remoteDataSource;
+  final TokenManager _tokenManager;
 
-  AuthRepositoryImpl(this.remoteDataSource);
+  AuthRepositoryImpl(this.remoteDataSource, this._tokenManager);
 
   @override
-  Future<Either<String, User>> login(
-    String matricule,
-    String agence,
-    String password,
-  ) async {
+  Future<Either<String, User>> login(String username, String password) async {
     try {
-      final userModel = await remoteDataSource.login(
-        matricule,
-        agence,
-        password,
-      );
-      // Optionnel : Ici nous pourrions sauvegarder le token en cache (ex: SharedPreferences / FlutterSecureStorage)
+      final userModel = await remoteDataSource.login(username, password);
       return Right(userModel);
     } catch (e) {
-      // Pour une vraie app, on parserait l'exception (DioException) pour un message clair
-      return Left(e.toString().replaceAll('Exception:', '').trim());
+      return Left(
+        ApiErrorHandler.message(
+          e,
+          unauthorizedMessage: 'Identifiant ou mot de passe incorrect.',
+        ),
+      );
     }
   }
 
   @override
-  Future<void> logout() async {
-    // Effacer les tokens dans le storage
-    await Future.delayed(const Duration(milliseconds: 500));
-  }
+  Future<void> logout() => _tokenManager.clearSession();
 }

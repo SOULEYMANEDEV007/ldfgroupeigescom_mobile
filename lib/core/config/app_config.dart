@@ -2,19 +2,26 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 /// Configuration centralisée et typée de l'application via les variables d'environnement (.env).
 abstract class AppConfig {
-  /// URL de base de l'API REST IGESCOM / LDF Groupe.
+  /// URL de base de l'API REST IGESCOM / LDF Groupe (sans slash final).
+  /// Les chemins complets (`/api/...`) sont définis dans `ApiEndpoints`.
   static String get apiBaseUrl =>
-      dotenv.env['API_BASE_URL'] ?? 'https://api.ldfgroupe.com/v1';
+      dotenv.env['API_BASE_URL'] ?? 'http://192.168.1.238';
+
+  /// `true` = datasources simulées (mode démo), `false` = vraie API.
+  static bool get useMockApi =>
+      (dotenv.env['USE_MOCK_API'] ?? 'false').toLowerCase() == 'true';
 
   /// Timeout de connexion HTTP.
   static Duration get connectTimeout {
-    final timeoutMs = int.tryParse(dotenv.env['CONNECT_TIMEOUT'] ?? '15000') ?? 15000;
+    final timeoutMs =
+        int.tryParse(dotenv.env['CONNECT_TIMEOUT'] ?? '15000') ?? 15000;
     return Duration(milliseconds: timeoutMs);
   }
 
   /// Timeout de réception HTTP.
   static Duration get receiveTimeout {
-    final timeoutMs = int.tryParse(dotenv.env['RECEIVE_TIMEOUT'] ?? '15000') ?? 15000;
+    final timeoutMs =
+        int.tryParse(dotenv.env['RECEIVE_TIMEOUT'] ?? '15000') ?? 15000;
     return Duration(milliseconds: timeoutMs);
   }
 

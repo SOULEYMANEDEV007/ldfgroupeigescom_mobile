@@ -24,10 +24,17 @@ class DeliveryRepositoryImpl implements DeliveryRepository {
   @override
   Future<Either<String, Delivery>> updateStatus(
     String id,
-    DeliveryStatus status,
-  ) async {
+    DeliveryStatus status, {
+    String? tourId,
+    String? notes,
+  }) async {
     try {
-      final updated = await remoteDataSource.updateStatus(id, status);
+      final updated = await remoteDataSource.updateStatus(
+        id,
+        status,
+        tourId: tourId,
+        notes: notes,
+      );
       return Right(updated);
     } catch (e) {
       return Left(e.toString());

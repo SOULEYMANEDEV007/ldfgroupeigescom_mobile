@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Configuration de sécurité réseau.
+  Le HTTP en clair est interdit PARTOUT sauf sur le serveur IGESCOM local
+  (réseau de développement/pré-production, pas de HTTPS pour l'instant).
+
+  ⚠️ Si l'IP du serveur change, mettre à jour la ligne <domain> correspondante
+  (et API_BASE_URL dans .env). En production : passer l'API en HTTPS et
+  retirer ce domain-config.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false" />
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">192.168.1.238</domain>
+        <!-- Émulateur Android -> machine hôte -->
+        <domain includeSubdomains="false">10.0.2.2</domain>
+    </domain-config>
+</network-security-config>

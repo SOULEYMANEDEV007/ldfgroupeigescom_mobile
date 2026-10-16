@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:injectable/injectable.dart';
 
 import '../config/app_config.dart';
@@ -23,18 +24,31 @@ abstract class NetworkModule {
     // Injection de l'intercepteur JWT avant le logger
     dio.interceptors.add(authInterceptor);
 
-    // Ajout d'intercepteurs pour logger les requêtes et réponses en mode debug
-    dio.interceptors.add(
-      LogInterceptor(
-        request: true,
-        requestHeader: true,
-        requestBody: true,
-        responseHeader: true,
-        responseBody: true,
-        error: true,
-      ),
-    );
+    // Logs requêtes/réponses uniquement hors release.
+    // Les en-têtes (Authorization) ne sont pas journalisés et les secrets
+    // (mot de passe, tokens) sont masqués dans les corps.
+    if (!kReleaseMode) {
+      dio.interceptors.add(
+        LogInterceptor(
+          request: true,
+          requestHeader: false,
+          requestBody: true,
+          responseHeader: false,
+          responseBody: true,
+          error: true,
+          logPrint: (object) => debugPrint(_redact(object.toString())),
+        ),
+      );
+    }
 
     return dio;
   }
 }
+
+final RegExp _secrets = RegExp(
+  r'(mdpasse|password|token|refresh)(["\x27]?\s*[:=]\s*["\x27]?)[^,}"\x27\s]+',
+  caseSensitive: false,
+);
+
+String _redact(String text) =>
+    text.replaceAllMapped(_secrets, (m) => '${m[1]}${m[2]}***');

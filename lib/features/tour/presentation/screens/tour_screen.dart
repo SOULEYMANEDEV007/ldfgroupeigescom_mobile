@@ -285,15 +285,20 @@ class _TourCard extends StatelessWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            'Tournée ${tour.agence}',
-                            style: Theme.of(context).textTheme.titleMedium
-                                ?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 14,
-                                  color: AppColors.textPrimary,
-                                ),
+                          Expanded(
+                            child: Text(
+                              tour.displayName,
+                              style: Theme.of(context).textTheme.titleMedium
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 14,
+                                    color: AppColors.textPrimary,
+                                  ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
+                          const SizedBox(width: 8),
                           Text(
                             '$totalDeliveries livraison${totalDeliveries > 1 ? 's' : ''}',
                             style: Theme.of(context).textTheme.bodySmall
@@ -304,7 +309,68 @@ class _TourCard extends StatelessWidget {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 6),
+
+                      // Métadonnées légères et compactes (Heure · Véhicule · Chauffeur)
+                      if (tour.heureDepart.isNotEmpty ||
+                          (tour.vehiclePlate.isNotEmpty &&
+                              tour.vehiclePlate != 'N/A') ||
+                          tour.chauffeurName.isNotEmpty) ...[
+                        const SizedBox(height: 5),
+                        Row(
+                          children: [
+                            if (tour.heureDepart.isNotEmpty) ...[
+                              const Icon(
+                                AppIcons.clock,
+                                size: 12,
+                                color: AppColors.textSecondary,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                tour.heureDepart,
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: AppColors.textSecondary,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                            ],
+                            if (tour.vehiclePlate.isNotEmpty &&
+                                tour.vehiclePlate != 'N/A') ...[
+                              const Icon(
+                                AppIcons.truck,
+                                size: 12,
+                                color: AppColors.textSecondary,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                tour.vehiclePlate,
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: AppColors.textSecondary,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                            ],
+                            if (tour.chauffeurName.isNotEmpty) ...[
+                              Expanded(
+                                child: Text(
+                                  tour.chauffeurName,
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    color: AppColors.textSecondary,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ],
+                      const SizedBox(height: 8),
 
                       // Progression sur une ligne avec barre
                       Row(

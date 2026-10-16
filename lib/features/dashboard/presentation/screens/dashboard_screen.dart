@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_icons.dart';
 import '../../../../core/di/injection.dart';
+import '../../../../core/network/token_manager.dart';
 import '../bloc/dashboard_cubit.dart';
 
 class DashboardScreen extends StatelessWidget {
@@ -43,6 +44,7 @@ class DashboardView extends StatelessWidget {
             );
           }
           if (state is DashboardLoaded) {
+            final stats = state.stats;
             return Column(
               children: [
                 // ── Header gradient vert ─────────────────────────────────
@@ -74,7 +76,7 @@ class DashboardView extends StatelessWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    'Bonjour Kouassi 👋',
+                                    'Bonjour ${getIt<TokenManager>().getFullName() ?? getIt<TokenManager>().getUserName() ?? 'Livreur'} 👋',
                                     style: Theme.of(context).textTheme.bodyLarge
                                         ?.copyWith(
                                           color: Colors.white.withAlpha(180),
@@ -161,16 +163,22 @@ class DashboardView extends StatelessWidget {
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
                                         children: [
-                                          const Text(
-                                            '1 Tournée en cours',
-                                            style: TextStyle(
+                                          Text(
+                                            stats.activeToursCount > 0
+                                                ? '${stats.activeToursCount} Tournée${stats.activeToursCount > 1 ? 's' : ''} en cours'
+                                                : 'Aucune tournée en cours',
+                                            style: const TextStyle(
                                               color: Colors.white,
                                               fontWeight: FontWeight.bold,
                                               fontSize: 14,
                                             ),
                                           ),
                                           Text(
-                                            "TRN-2026-0830 • Aujourd'hui",
+                                            stats.activeTourRef.isNotEmpty &&
+                                                    stats.activeTourRef !=
+                                                        'Aucune tournée'
+                                                ? "${stats.activeTourRef} • Aujourd'hui"
+                                                : "Aucune tournée active",
                                             style: TextStyle(
                                               color: Colors.white.withAlpha(
                                                 160,
@@ -220,9 +228,9 @@ class DashboardView extends StatelessWidget {
                                         fontSize: 11,
                                       ),
                                     ),
-                                    const Text(
-                                      '2 / 6 livrées',
-                                      style: TextStyle(
+                                    Text(
+                                      '${stats.completedDeliveries} / ${stats.totalDeliveries} livrées',
+                                      style: const TextStyle(
                                         color: Colors.white,
                                         fontSize: 11,
                                         fontWeight: FontWeight.bold,
@@ -234,7 +242,7 @@ class DashboardView extends StatelessWidget {
                                 ClipRRect(
                                   borderRadius: BorderRadius.circular(6),
                                   child: LinearProgressIndicator(
-                                    value: 2 / 6,
+                                    value: stats.progressionRatio,
                                     backgroundColor: Colors.white.withAlpha(40),
                                     color: AppColors.navBarYellow,
                                     minHeight: 7,
@@ -285,7 +293,7 @@ class DashboardView extends StatelessWidget {
                                 Expanded(
                                   child: _StatCard(
                                     title: 'Total',
-                                    count: '10',
+                                    count: '${stats.totalDeliveries}',
                                     icon: AppIcons.list,
                                     color: AppColors.accentBlue,
                                     bgColor: AppColors.accentBlueSoft,
@@ -296,7 +304,7 @@ class DashboardView extends StatelessWidget {
                                 Expanded(
                                   child: _StatCard(
                                     title: 'Livrées',
-                                    count: '6',
+                                    count: '${stats.completedDeliveries}',
                                     icon: AppIcons.checkCircle,
                                     color: AppColors.success,
                                     bgColor: AppColors.successSoft,
@@ -311,8 +319,7 @@ class DashboardView extends StatelessWidget {
                                 Expanded(
                                   child: _StatCard(
                                     title: 'En attente',
-                                    count: '3',
-
+                                    count: '${stats.pendingDeliveries}',
                                     icon: AppIcons.clock,
                                     color: AppColors.warning,
                                     bgColor: AppColors.warningSoft,
@@ -323,7 +330,7 @@ class DashboardView extends StatelessWidget {
                                 Expanded(
                                   child: _StatCard(
                                     title: 'Échecs',
-                                    count: '1',
+                                    count: '${stats.failedDeliveries}',
                                     icon: AppIcons.error,
                                     color: AppColors.error,
                                     bgColor: AppColors.errorSoft,

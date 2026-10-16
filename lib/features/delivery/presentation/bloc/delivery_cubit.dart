@@ -8,11 +8,6 @@ import '../../domain/usecases/update_delivery_status_usecase.dart';
 part 'delivery_state.dart';
 
 /// Cubit gérant le cycle de vie d'une livraison individuelle.
-///
-/// Responsabilités :
-/// - Démarrer une livraison (pending → inProgress)
-/// - Valider une livraison (inProgress → delivered)
-/// - Signaler un échec    (inProgress → cancelled)
 @injectable
 class DeliveryCubit extends Cubit<DeliveryState> {
   final UpdateDeliveryStatusUseCase updateStatusUseCase;
@@ -21,19 +16,24 @@ class DeliveryCubit extends Cubit<DeliveryState> {
 
   /// Démarre une livraison
   Future<void> startDelivery(Delivery delivery) async {
+    if (isClosed) return;
     emit(DeliveryUpdating(delivery));
 
     try {
       final result = await updateStatusUseCase(
         delivery.id,
         DeliveryStatus.inProgress,
+        tourId: delivery.tourId,
       );
+
+      if (isClosed) return;
 
       result.fold(
         (error) => emit(DeliveryError(delivery, error)),
         (updatedDelivery) => emit(DeliveryUpdated(updatedDelivery)),
       );
     } catch (e) {
+      if (isClosed) return;
       emit(DeliveryError(delivery, e.toString()));
     }
   }
@@ -45,19 +45,25 @@ class DeliveryCubit extends Cubit<DeliveryState> {
     String? signatureUrl,
     List<String>? photoUrls,
   }) async {
+    if (isClosed) return;
     emit(DeliveryUpdating(delivery));
 
     try {
       final result = await updateStatusUseCase(
         delivery.id,
         DeliveryStatus.delivered,
+        tourId: delivery.tourId,
+        notes: notes,
       );
+
+      if (isClosed) return;
 
       result.fold(
         (error) => emit(DeliveryError(delivery, error)),
         (updatedDelivery) => emit(DeliveryUpdated(updatedDelivery)),
       );
     } catch (e) {
+      if (isClosed) return;
       emit(DeliveryError(delivery, e.toString()));
     }
   }
@@ -68,19 +74,29 @@ class DeliveryCubit extends Cubit<DeliveryState> {
     required String reason,
     String? notes,
   }) async {
+    if (isClosed) return;
     emit(DeliveryUpdating(delivery));
 
     try {
+      final combinedNotes = notes != null && notes.isNotEmpty
+          ? '[$reason] $notes'
+          : '[$reason]';
+
       final result = await updateStatusUseCase(
         delivery.id,
         DeliveryStatus.cancelled,
+        tourId: delivery.tourId,
+        notes: combinedNotes,
       );
+
+      if (isClosed) return;
 
       result.fold(
         (error) => emit(DeliveryError(delivery, error)),
         (updatedDelivery) => emit(DeliveryUpdated(updatedDelivery)),
       );
     } catch (e) {
+      if (isClosed) return;
       emit(DeliveryError(delivery, e.toString()));
     }
   }
