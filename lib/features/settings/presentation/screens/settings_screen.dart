@@ -93,7 +93,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   onTap: () {
                     onSelected(opt);
                     Navigator.of(context).pop();
-                    AppFeedback.info(context, 'Paramètre "$opt" enregistré.');
+                    AppFeedback.toast(context, 'Paramètre "$opt" enregistré.');
                   },
                 );
               }),
@@ -176,7 +176,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     value: _autoSync,
                     onChanged: (val) {
                       setState(() => _autoSync = val);
-                      AppFeedback.info(
+                      AppFeedback.toast(
                         context,
                         val
                             ? 'Synchronisation auto activée.'
@@ -192,7 +192,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     value: _offlineMode,
                     onChanged: (val) {
                       setState(() => _offlineMode = val);
-                      AppFeedback.info(
+                      AppFeedback.toast(
                         context,
                         val
                             ? 'Mode hors-ligne activé.'
@@ -269,7 +269,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     value: _pushNotifications,
                     onChanged: (val) {
                       setState(() => _pushNotifications = val);
-                      AppFeedback.info(
+                      AppFeedback.toast(
                         context,
                         val
                             ? 'Notifications push activées.'
@@ -351,7 +351,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     value: _biometrics,
                     onChanged: (val) {
                       setState(() => _biometrics = val);
-                      AppFeedback.info(
+                      AppFeedback.toast(
                         context,
                         val
                             ? 'Biométrie activée pour votre compte.'
@@ -364,7 +364,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     icon: AppIcons.lock,
                     title: 'Modifier le code PIN de session',
                     onTap: () {
-                      AppFeedback.info(
+                      AppFeedback.toast(
                         context,
                         'Fonctionnalité de changement de PIN disponible prochainement.',
                       );
@@ -375,7 +375,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     icon: AppIcons.shieldCheck,
                     title: 'Sessions actives & Appareils autorisés',
                     onTap: () {
-                      AppFeedback.info(
+                      AppFeedback.toast(
                         context,
                         'Appareil actif actuel : TECNO BF6 (ID: #023).',
                       );
@@ -393,7 +393,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     title: 'Version de l\'application',
                     trailingText: 'v1.0.4 (Build 2026.09)',
                     onTap: () {
-                      AppFeedback.info(
+                      AppFeedback.toast(
                         context,
                         'Igescom Mobile v1.0.4 — Dernière version installée.',
                       );
@@ -404,7 +404,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     icon: AppIcons.pdf,
                     title: 'Conditions Générales d\'Utilisation (CGU)',
                     onTap: () {
-                      AppFeedback.info(
+                      AppFeedback.toast(
                         context,
                         'Consultation des CGU logistiques LdF Groupe.',
                       );
@@ -416,7 +416,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     title: 'Contacter le support logistique',
                     subtitle: 'Assistance 24/7 pour les chauffeurs-livreurs',
                     onTap: () {
-                      AppFeedback.info(
+                      AppFeedback.toast(
                         context,
                         'Appel du support LdF (+225 27 20 00 00 00)…',
                       );

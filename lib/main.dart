@@ -92,6 +92,7 @@ class _LdfMobileAppState extends State<LdfMobileApp> {
         AppFeedback.warning(
           context,
           'Votre session a expiré. Veuillez vous reconnecter.',
+          title: 'Session expirée',
         );
       }
     });

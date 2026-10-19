@@ -332,6 +332,38 @@ flutter run
 - **Validation** :
   - `flutter analyze` : **No issues found!** (0 erreur, 0 avertissement).
 
+### Session du 19/10/2026 — UI : Icône Identifiant & Popups à la place des Toasts
+- **Demande du Développeur** :
+  1. Page connexion : icône du champ « Identifiant » = personne (au lieu du badge).
+  2. Messages de retour : privilégier les **popups** plutôt que les toasts, avec un rendu **professionnel et sobre** (ne pas donner l'impression d'un design généré par IA).
+- **Réalisations** :
+  1. [login_screen.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/auth/presentation/screens/login_screen.dart) : `AppIcons.badge` → `AppIcons.person`.
+  2. [app_dialogs.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/core/utils/app_dialogs.dart) : gabarit commun sobre (carte blanche rayon 12, fine barre d'accent 3px, petite icône 20px + titre alignés à gauche, message gris, bouton aligné à droite, pas de grand cercle pastel). Nouveaux `showWarningDialog` / `showInfoDialog` ; `showSuccessDialog` / `showErrorDialog` / `showConfirmationDialog` restylés ; paramètre optionnel `title`. **File d'attente** statique : un seul popup de message à la fois, `context.mounted` vérifié avant affichage.
+  3. [app_feedback.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/core/utils/app_feedback.dart) : `success/error/warning/info` ouvrent désormais des popups (retournent un `Future<void>` terminé à la fermeture) → ~30 appels migrés sans toucher chaque écran. `AppFeedback.toast(...)` conservé (SnackBar discret) pour les confirmations mineures.
+  4. [settings_screen.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/settings/presentation/screens/settings_screen.dart) : 10 `AppFeedback.info` → `AppFeedback.toast` (réglages fréquents).
+  5. Titres métier ajoutés : « Connexion impossible » (login), « Livraison confirmée » / « Validation impossible » (livraison, tournée), « Session expirée » ([main.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/main.dart)).
+  6. [delivery_detail_screen.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/delivery/presentation/screens/delivery_detail_screen.dart) : `context.pop(true)` exécuté **après** fermeture du popup de succès (sinon il aurait fermé le popup lui-même).
+- ⚠️ **Règle à retenir** : tout `AppFeedback.*` suivi d'une navigation doit chaîner `.then(...)` (popup bloquant), avec contrôle `context.mounted`.
+- **Correctif dialogue de confirmation** : `minimumSize: Size.zero` sur les boutons de `showDeliveryConfirmationDialog` (le thème impose `Size(double.infinity, 56)` aux boutons → boutons dans une `Row` = crash `RenderBox was not laid out`). **Règle** : tout bouton placé dans une `Row` doit redéfinir `minimumSize`.
+
+### Suite Session du 19/10/2026 — Correction Définitive Validation Livraison & Token Tenant
+- **Symptôme** : « Ressource introuvable » (404) ou « Token invalide pour cette instance » (401).
+- **Analyse des requêtes du portail Web (DevTools)** :
+  1. **URL réelle du Web** : `POST /api/flotte/tournees/lignes/{code_ligne}/valider-livraison/` avec body `{"observation_livraison": "", "tournee": ""}` (pas de `code_tournee` dans l'URL, et le paramètre est bien `code_ligne` ex: 71811, pas `code_bl`).
+  2. **Origine du 401 Instance** : Le login mobile initial manquait du claim `tenant: "t_a66f51c3"`. Le token ERP émis par `/api/login/` (qui requiert `{nom_util, mdpasse, code_agce}`) contient ce tenant et passe le middleware Django sans aucun blocage.
+- **Modifications appliquées** :
+  1. [api_endpoints.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/core/network/api_endpoints.dart) : `validateDelivery(String codeLigne)` pointant sur `/api/flotte/tournees/lignes/$codeLigne/valider-livraison/`.
+  2. [delivery_model.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/delivery/data/models/delivery_model.dart) : `Delivery.id` = `code_ligne` (ex: 71411), et `deliveryNoteNumber` = `BL-66488311` pour l'affichage UI.
+  3. [delivery_remote_data_source.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/delivery/data/datasources/delivery_remote_data_source.dart) : `ApiEndpoints.validateDelivery(cleanLigneId)` avec `observation_livraison` et `tournee`.
+  4. [auth_remote_data_source.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/auth/data/datasources/auth_remote_data_source.dart) : Lors du login, acquisition transparente du token ERP avec claim tenant (`/api/login/`) pour débloquer toutes les opérations d'instance.
+  5. [token_manager.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/core/network/token_manager.dart) : Ajout du getter `hasTenantClaim` vérifiant la présence du tenant dans le JWT stocké.
+  6. [splash_screen.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/auth/presentation/screens/splash_screen.dart) : Purge automatique des anciennes sessions sans tenant pour forcer une reconnexion propre et valide.
+  7. [auth_interceptor.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/core/network/auth_interceptor.dart) : Interdiction stricte d'injecter `Authorization` sur les routes de login (`login` et `erpLogin`) pour éviter l'erreur 500 du serveur Django.
+  8. [delivery_remote_data_source.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/delivery/data/datasources/delivery_remote_data_source.dart) : Ajout de `noSessionExpire: true` sur la requête de validation pour sanctuariser la session du livreur contre toute déconnexion intempestive.
+- **Validation** : `flutter analyze` : **No issues found!** (0 erreur, 0 avertissement).
+
+
+
 ---
 
 ## 7. 🌿 Informations Git

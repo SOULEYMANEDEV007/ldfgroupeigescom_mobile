@@ -48,7 +48,11 @@ class _LoginViewState extends State<LoginView> {
       body: BlocConsumer<LoginBloc, LoginState>(
         listener: (context, state) {
           if (state is LoginFailure) {
-            AppFeedback.error(context, state.message);
+            AppFeedback.error(
+              context,
+              state.message,
+              title: 'Connexion impossible',
+            );
           } else if (state is LoginSuccess) {
             context.go('/dashboard');
           }
@@ -68,7 +72,7 @@ class _LoginViewState extends State<LoginView> {
                         ClipRRect(
                           borderRadius: BorderRadius.circular(22),
                           child: Image.asset(
-                            'assets/logo/ldfgroupe-icon-app.webp',
+                            'assets/images/ldf_logo.png',
                             width: 80,
                             height: 80,
                             fit: BoxFit.cover,
@@ -139,7 +143,7 @@ class _LoginViewState extends State<LoginView> {
                             decoration: const InputDecoration(
                               labelText: 'Identifiant *',
                               hintText: 'Votre identifiant',
-                              prefixIcon: Icon(AppIcons.badge),
+                              prefixIcon: Icon(AppIcons.person),
                             ),
                             validator: (value) {
                               if (value == null || value.trim().isEmpty) {
@@ -166,7 +170,8 @@ class _LoginViewState extends State<LoginView> {
                                   size: 20,
                                 ),
                                 onPressed: () => setState(
-                                  () => _isPasswordVisible = !_isPasswordVisible,
+                                  () =>
+                                      _isPasswordVisible = !_isPasswordVisible,
                                 ),
                               ),
                             ),

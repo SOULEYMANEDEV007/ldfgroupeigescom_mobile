@@ -82,7 +82,11 @@ class _TourDetailScreenState extends State<TourDetailScreen> {
                 );
               }
             });
-            AppFeedback.success(context, 'Livraison confirmée avec succès');
+            AppFeedback.success(
+              context,
+              'Livraison confirmée avec succès',
+              title: 'Livraison confirmée',
+            );
             try {
               getIt<DashboardCubit>().fetchStats();
             } catch (_) {}
@@ -90,7 +94,11 @@ class _TourDetailScreenState extends State<TourDetailScreen> {
             setState(() {
               _validatingDeliveryId = null;
             });
-            AppFeedback.error(context, state.message);
+            AppFeedback.error(
+              context,
+              state.message,
+              title: 'Validation impossible',
+            );
           }
         },
         child: Scaffold(

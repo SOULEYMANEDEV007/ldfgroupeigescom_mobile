@@ -14,10 +14,15 @@ class AuthInterceptor extends Interceptor {
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
+    final isLogin = options.path.contains(ApiEndpoints.login) ||
+        options.path.contains(ApiEndpoints.erpLogin);
+
     final token = _tokenManager.getToken();
 
-    if (token != null && token.isNotEmpty) {
+    if (!isLogin && token != null && token.isNotEmpty) {
       options.headers['Authorization'] = 'Bearer $token';
+    } else if (isLogin) {
+      options.headers.remove('Authorization');
     }
 
     super.onRequest(options, handler);
@@ -28,7 +33,8 @@ class AuthInterceptor extends Interceptor {
     DioException err,
     ErrorInterceptorHandler handler,
   ) async {
-    final isLoginRequest = err.requestOptions.path.contains(ApiEndpoints.login);
+    final isLoginRequest = err.requestOptions.path.contains(ApiEndpoints.login) ||
+        err.requestOptions.path.contains(ApiEndpoints.erpLogin);
     final isRefreshRequest =
         err.requestOptions.path.contains(ApiEndpoints.refreshToken);
     final isProfileRequest = err.requestOptions.path.contains('/profil/');
@@ -36,6 +42,8 @@ class AuthInterceptor extends Interceptor {
     final isInstanceTokenError = err.response?.data is Map &&
         (err.response?.data['detail']?.toString().toLowerCase().contains('instance') ??
             false);
+    final shouldIgnoreInstanceError =
+        isInstanceTokenError && _tokenManager.hasTenantClaim;
     final hadSession = (_tokenManager.getToken() ?? '').isNotEmpty;
 
     // Un 401 sur le login = mauvais identifiants (géré par l'écran de login).
@@ -45,7 +53,7 @@ class AuthInterceptor extends Interceptor {
         !isRefreshRequest &&
         !isProfileRequest &&
         !noSessionExpire &&
-        !isInstanceTokenError &&
+        !shouldIgnoreInstanceError &&
         hadSession) {
       final refreshToken = _tokenManager.getRefreshToken();
 

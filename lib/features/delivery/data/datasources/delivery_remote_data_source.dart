@@ -3,6 +3,7 @@ import 'package:injectable/injectable.dart';
 
 import '../../../../core/di/app_environments.dart';
 import '../../../../core/network/api_endpoints.dart';
+import '../../../../core/network/api_error_handler.dart';
 import '../../domain/entities/delivery.dart';
 import '../models/delivery_model.dart';
 
@@ -50,32 +51,25 @@ class RealDeliveryRemoteDataSourceImpl implements DeliveryRemoteDataSource {
   }) async {
     // Si validation de livraison, envoi de la requête au backend
     if (status == DeliveryStatus.delivered) {
-      final cleanLigneId = id.replaceFirst('BL-', '').trim();
-      final cleanTournee = (tourId != null && tourId.isNotEmpty && tourId != 'N/A')
-          ? tourId
-          : '';
-      try {
-        await _dio.post(
-          ApiEndpoints.validateDelivery(cleanLigneId),
-          data: {
-            'observation_livraison': notes ?? '',
-            'tournee': cleanTournee,
-          },
+      final cleanLigneId = id.trim();
+      final cleanTournee =
+          (tourId != null && tourId.isNotEmpty && tourId != 'N/A') ? tourId : '';
+      if (cleanLigneId.isEmpty || cleanLigneId == 'N/A') {
+        throw const ApiException(
+          'Ligne de livraison introuvable : impossible de valider cette livraison.',
         );
-      } catch (_) {
-        // Tentative de repli avec l'URL alternative si la tournée est fournie
-        if (cleanTournee.isNotEmpty) {
-          await _dio.post(
-            ApiEndpoints.validateDeliveryWithTour(cleanTournee, cleanLigneId),
-            data: {
-              'observation_livraison': notes ?? '',
-              'tournee': cleanTournee,
-            },
-          );
-        } else {
-          rethrow;
-        }
       }
+
+      await _dio.post(
+        ApiEndpoints.validateDelivery(cleanLigneId),
+        data: {
+          'observation_livraison': notes ?? '',
+          'tournee': cleanTournee,
+        },
+        options: Options(
+          extra: {'noSessionExpire': true},
+        ),
+      );
     }
 
     return DeliveryModel(

@@ -62,6 +62,7 @@ class DeliveryModel extends Delivery {
           : (commentBl ?? '');
 
       return DeliveryModel(
+        // L'id technique est le code_ligne (attendu par valider-livraison)
         id: json['code_ligne']?.toString() ?? codeBlStr,
         tourId: json['code_tournee']?.toString() ?? 'N/A',
         clientCode: client?['code_clt']?.toString() ?? 'N/A',

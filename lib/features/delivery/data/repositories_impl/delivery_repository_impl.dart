@@ -1,6 +1,7 @@
 import 'package:dartz/dartz.dart';
 import 'package:injectable/injectable.dart';
 
+import '../../../../core/network/api_error_handler.dart';
 import '../../domain/entities/delivery.dart';
 import '../../domain/repositories/delivery_repository.dart';
 import '../datasources/delivery_remote_data_source.dart';
@@ -37,7 +38,13 @@ class DeliveryRepositoryImpl implements DeliveryRepository {
       );
       return Right(updated);
     } catch (e) {
-      return Left(e.toString());
+      return Left(
+        ApiErrorHandler.message(
+          e,
+          unauthorizedMessage:
+              "Validation refusée par le serveur : ce compte n'est pas autorisé à valider cette livraison.",
+        ),
+      );
     }
   }
 }

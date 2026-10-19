@@ -17,6 +17,11 @@ class ApiEndpoints {
   /// Réponse: `{ status, data: { agent{code_agent, nom_util, code_agce, code_fonct}, token, refresh } }`
   static const String login = '/api/metabase/mobile/livraison/login/';
 
+  /// Connexion ERP avec instance/tenant (indispensable pour les opérations de flotte/validation).
+  /// Méthode: POST
+  /// Body: `{ "nom_util": String, "mdpasse": String, "code_agce": String }`
+  static const String erpLogin = '/api/login/';
+
   // ===========================================================================
   // 🚚 TOURNÉES & LIVRAISONS
   // ===========================================================================
@@ -39,14 +44,10 @@ class ApiEndpoints {
 
   /// Validation d'une livraison (ligne de tournée).
   /// Méthode: POST
-  /// Body: `{ "observation_livraison": String, "tournee": code_tournee }`
-  /// ⚠️ L'URL officielle backend est `/api/flotte/tournees/lignes/{code_bl}/valider-livraison/`.
-  static String validateDelivery(String codeBl) =>
-      '/api/flotte/tournees/lignes/$codeBl/valider-livraison/';
-
-  /// Fallback alternatif avec code tournée dans l'URL si applicable.
-  static String validateDeliveryWithTour(String codeTournee, String codeBl) =>
-      '/api/flotte/tournees/$codeTournee/lignes/$codeBl/valider-livraison/';
+  /// Body: `{ "observation_livraison": String, "tournee": String }`
+  /// URL officielle backend : `/api/flotte/tournees/lignes/{code_ligne}/valider-livraison/`
+  static String validateDelivery(String codeLigne) =>
+      '/api/flotte/tournees/lignes/$codeLigne/valider-livraison/';
 
   // ===========================================================================
   // 👤 PROFIL & COMPTE AGENT

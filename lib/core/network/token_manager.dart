@@ -4,6 +4,8 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:injectable/injectable.dart';
 
+import '../config/app_config.dart';
+
 /// Gestionnaire du Token JWT et de la session utilisateur locale.
 ///
 /// Stocke (SharedPreferences) les jetons et l'identité renvoyés par l'API de
@@ -144,5 +146,31 @@ class TokenManager {
   bool get isAuthenticated {
     final token = getToken();
     return token != null && token.isNotEmpty && !isAccessTokenExpired;
+  }
+
+  /// 📜 Décode les claims du JWT actuellement stocké
+  Map<String, dynamic>? get jwtClaims {
+    final token = getToken();
+    if (token == null) return null;
+    final parts = token.split('.');
+    if (parts.length != 3) return null;
+    try {
+      final payload = utf8.decode(
+        base64Url.decode(base64Url.normalize(parts[1])),
+      );
+      final decoded = jsonDecode(payload);
+      return decoded is Map<String, dynamic> ? decoded : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// 🏢 `true` si le token possède le claim 'tenant' requis pour valider les tournées
+  bool get hasTenantClaim {
+    if (AppConfig.useMockApi) return true;
+    final claims = jwtClaims;
+    if (claims == null) return false;
+    final tenant = claims['tenant']?.toString();
+    return tenant != null && tenant.isNotEmpty;
   }
 }

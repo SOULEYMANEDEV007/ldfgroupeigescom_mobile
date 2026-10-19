@@ -115,10 +115,6 @@ extension GetItInjectableX on _i174.GetIt {
     gh.lazySingleton<_i361.Dio>(
       () => networkModule.getDio(gh<_i908.AuthInterceptor>()),
     );
-    gh.lazySingleton<_i107.AuthRemoteDataSource>(
-      () => _i107.MockAuthRemoteDataSourceImpl(gh<_i374.TokenManager>()),
-      registerFor: {_mock},
-    );
     gh.lazySingleton<_i847.ProfileRemoteDataSource>(
       () => _i847.ProfileRemoteDataSourceImpl(
         gh<_i361.Dio>(),

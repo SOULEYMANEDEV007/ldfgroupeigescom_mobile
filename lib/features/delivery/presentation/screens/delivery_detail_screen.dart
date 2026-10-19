@@ -40,11 +40,21 @@ class _DeliveryDetailView extends StatelessWidget {
     return BlocListener<DeliveryCubit, DeliveryState>(
       listener: (context, state) {
         if (state is DeliveryUpdated) {
-          AppFeedback.success(context, 'Livraison confirmée avec succès');
-          context.pop(true);
+          // Le retour à l'écran précédent se fait APRÈS fermeture du popup.
+          AppFeedback.success(
+            context,
+            'Livraison confirmée avec succès',
+            title: 'Livraison confirmée',
+          ).then((_) {
+            if (context.mounted) context.pop(true);
+          });
         }
         if (state is DeliveryError) {
-          AppFeedback.error(context, state.message);
+          AppFeedback.error(
+            context,
+            state.message,
+            title: 'Validation impossible',
+          );
         }
       },
       child: Scaffold(
