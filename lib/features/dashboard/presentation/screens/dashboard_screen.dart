@@ -367,13 +367,13 @@ class DashboardView extends StatelessWidget {
                                     ),
                                   ),
                                   const SizedBox(width: 12),
-                                  Expanded(
+                                  /*Expanded(
                                     child: _QuickActionButton(
                                       icon: AppIcons.history,
                                       label: 'Historique',
                                       onTap: () => context.push('/history'),
                                     ),
-                                  ),
+                                  ),*/
                                   const SizedBox(width: 12),
                                   Expanded(
                                     child: _QuickActionButton(

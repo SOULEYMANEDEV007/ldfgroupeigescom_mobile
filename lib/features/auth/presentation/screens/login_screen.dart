@@ -80,7 +80,7 @@ class _LoginViewState extends State<LoginView> {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          'Igescom Mobile',
+                          'Igescom+',
                           style: Theme.of(context).textTheme.titleLarge
                               ?.copyWith(
                                 color: AppColors.primaryDark,
@@ -183,7 +183,7 @@ class _LoginViewState extends State<LoginView> {
                             },
                           ),
                           const SizedBox(height: 10),
-                          Align(
+                          /*Align(
                             alignment: Alignment.centerRight,
                             child: TextButton(
                               onPressed: () {
@@ -201,7 +201,7 @@ class _LoginViewState extends State<LoginView> {
                                 ),
                               ),
                             ),
-                          ),
+                          ),*/
 
                           const SizedBox(height: 24),
 
@@ -237,7 +237,7 @@ class _LoginViewState extends State<LoginView> {
 
                           Center(
                             child: Text(
-                              '© LdF Groupe CI — Igescom v1.0',
+                              '© LdF Groupe — Igescom v1.0',
                               style: Theme.of(
                                 context,
                               ).textTheme.bodyMedium?.copyWith(fontSize: 11),

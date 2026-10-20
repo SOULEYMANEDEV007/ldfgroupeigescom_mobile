@@ -50,10 +50,7 @@ class _TourDetailScreenState extends State<TourDetailScreen> {
       setState(() {
         _validatingDeliveryId = delivery.id;
       });
-      await _deliveryCubit.validateDelivery(
-        delivery,
-        notes: '',
-      );
+      await _deliveryCubit.validateDelivery(delivery, notes: '');
     }
   }
 
@@ -130,7 +127,10 @@ class _TourDetailScreenState extends State<TourDetailScreen> {
                         Row(
                           children: [
                             IconButton(
-                              icon: const Icon(AppIcons.back, color: Colors.white),
+                              icon: const Icon(
+                                AppIcons.back,
+                                color: Colors.white,
+                              ),
                               onPressed: () => context.pop(),
                               padding: EdgeInsets.zero,
                               constraints: const BoxConstraints(
@@ -295,7 +295,8 @@ class _TourDetailScreenState extends State<TourDetailScreen> {
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
                   // ↑ STANDARD : padding 16px aligné avec l'AppBar
                   itemCount: _deliveries.length,
-                  separatorBuilder: (context, index) => const SizedBox(height: 12),
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(height: 12),
                   // ↑ STANDARD : 12px entre les cartes
                   itemBuilder: (context, index) {
                     final delivery = _deliveries[index];
@@ -385,9 +386,9 @@ class _DeliveryListCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: isDelivered
                       ? AppColors.success
-                      : isInProgress
-                          ? AppColors.primary
-                          : AppColors.warning,
+                      : (delivery.status == DeliveryStatus.cancelled
+                            ? AppColors.warning
+                            : AppColors.textSecondary.withAlpha(80)),
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),
@@ -480,8 +481,10 @@ class _DeliveryListCard extends StatelessWidget {
 
               const SizedBox(width: 8),
 
+              _buildStatusBadge(delivery.status),
+
               // Bouton d'action direct (Valider / Livrée) comme sur le web
-              if (isDelivered)
+              /*if (isDelivered)
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 10,
@@ -490,9 +493,7 @@ class _DeliveryListCard extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: AppColors.successSoft,
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: AppColors.success.withAlpha(60),
-                    ),
+                    border: Border.all(color: AppColors.success.withAlpha(60)),
                   ),
                   child: const Row(
                     mainAxisSize: MainAxisSize.min,
@@ -546,10 +547,62 @@ class _DeliveryListCard extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                ),
+                ),*/
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildStatusBadge(DeliveryStatus status) {
+    final (
+      Color color,
+      Color bgColor,
+      IconData icon,
+      String label,
+    ) = switch (status) {
+      DeliveryStatus.delivered => (
+        AppColors.success,
+        AppColors.successSoft,
+        AppIcons.checkCircle,
+        'Livré',
+      ),
+      DeliveryStatus.cancelled => (
+        AppColors.warning,
+        AppColors.warningSoft,
+        AppIcons.clock,
+        'Reprogrammé',
+      ),
+      _ => (
+        AppColors.textSecondary,
+        AppColors.background,
+        AppIcons.clock,
+        'En attente',
+      ),
+    };
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withAlpha(60)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 13, color: color),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+        ],
       ),
     );
   }
