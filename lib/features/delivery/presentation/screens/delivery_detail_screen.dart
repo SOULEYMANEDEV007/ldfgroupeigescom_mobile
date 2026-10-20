@@ -321,6 +321,7 @@ class _MapSection extends StatefulWidget {
 
 class _MapSectionState extends State<_MapSection> {
   final _locationService = getIt<LocationService>();
+  final MapController _mapController = MapController();
   Position? _currentPosition;
   bool _isLoadingLocation = false;
   String? _locationError;
@@ -344,6 +345,12 @@ class _MapSectionState extends State<_MapSection> {
           _currentPosition = position;
           _isLoadingLocation = false;
         });
+
+        // Zoom ou Déplacer la caméra sur la vraie position
+        _mapController.move(
+          LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+          15.5,
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -380,9 +387,10 @@ class _MapSectionState extends State<_MapSection> {
       child: Stack(
         children: [
           FlutterMap(
+            mapController: _mapController,
             options: MapOptions(
               initialCenter: point,
-              initialZoom: 14.5,
+              initialZoom: 15.0,
               interactionOptions: const InteractionOptions(
                 flags: InteractiveFlag.pinchZoom | InteractiveFlag.drag,
               ),
