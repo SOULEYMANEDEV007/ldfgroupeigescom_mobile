@@ -90,7 +90,11 @@ class _DeliveryDetailView extends StatelessWidget {
                                   icon: AppIcons.clock,
                                   iconColor: AppColors.accentBlue,
                                   iconBgColor: AppColors.accentBlueSoft,
-                                  label: 'Heure prévue',
+                                  label:
+                                      delivery.status ==
+                                          DeliveryStatus.delivered
+                                      ? 'Heure de livraison'
+                                      : 'Heure prévue',
                                   value: DateFormat(
                                     'HH:mm',
                                   ).format(delivery.scheduledTime),
@@ -247,16 +251,9 @@ class _DeliveryHeader extends StatelessWidget {
             children: [
               IconButton(
                 onPressed: () => context.pop(),
-                icon: const Icon(
-                  AppIcons.back,
-                  color: Colors.white,
-                  size: 22,
-                ),
+                icon: const Icon(AppIcons.back, color: Colors.white, size: 22),
                 padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(
-                  minWidth: 40,
-                  minHeight: 40,
-                ),
+                constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
               ),
               const SizedBox(width: 8),
               Expanded(
@@ -441,11 +438,7 @@ class _MapSectionState extends State<_MapSection> {
               top: 8,
               right: 8,
               child: IconButton(
-                icon: Icon(
-                  AppIcons.refresh,
-                  color: AppColors.error,
-                  size: 20,
-                ),
+                icon: Icon(AppIcons.refresh, color: AppColors.error, size: 20),
                 onPressed: _getCurrentLocation,
                 style: IconButton.styleFrom(
                   backgroundColor: Colors.white,
@@ -565,6 +558,102 @@ class _KpiCard extends StatelessWidget {
   }
 }
 
+Future<void> _showReprogramDialog(
+  BuildContext context,
+  Delivery delivery,
+) async {
+  final reasonController = TextEditingController();
+  final formKey = GlobalKey<FormState>();
+
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (dialogCtx) => AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+      contentPadding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+      actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      title: Row(
+        children: const [
+          Icon(AppIcons.clock, color: AppColors.warning, size: 20),
+          SizedBox(width: 8),
+          Text(
+            'Reprogrammer la livraison',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+        ],
+      ),
+      content: Form(
+        key: formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Indiquez le motif du report pour le bon ${delivery.deliveryNoteNumber} :',
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: reasonController,
+              maxLines: 3,
+              autofocus: true,
+              decoration: InputDecoration(
+                hintText: 'Ex : Client absent, report demandé, accès fermé...',
+                hintStyle: const TextStyle(
+                  fontSize: 12,
+                  color: AppColors.textSecondary,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                contentPadding: const EdgeInsets.all(12),
+              ),
+              validator: (val) {
+                if (val == null || val.trim().isEmpty) {
+                  return 'Veuillez saisir un motif';
+                }
+                return null;
+              },
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(dialogCtx).pop(false),
+          child: const Text(
+            'Annuler',
+            style: TextStyle(color: AppColors.textSecondary),
+          ),
+        ),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.warning,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+          onPressed: () {
+            if (formKey.currentState!.validate()) {
+              Navigator.of(dialogCtx).pop(true);
+            }
+          },
+          child: const Text('Confirmer le report'),
+        ),
+      ],
+    ),
+  );
+
+  if (confirmed == true && context.mounted) {
+    final reason = reasonController.text.trim();
+    context.read<DeliveryCubit>().reportFailure(delivery, reason: reason);
+  }
+}
+
 // ─── Barre d'actions sticky ───────────────────────────────────────────────────
 class _StickyActionBar extends StatelessWidget {
   final Delivery delivery;
@@ -576,8 +665,11 @@ class _StickyActionBar extends StatelessWidget {
       builder: (context, state) {
         final isLoading = state is DeliveryUpdating;
 
-        if (delivery.status == DeliveryStatus.delivered ||
+        /*if (delivery.status == DeliveryStatus.delivered ||
             delivery.status == DeliveryStatus.cancelled) {
+          return const SizedBox.shrink();
+        }*/
+        if (delivery.status == DeliveryStatus.delivered) {
           return const SizedBox.shrink();
         }
 
@@ -603,18 +695,12 @@ class _StickyActionBar extends StatelessWidget {
               OutlinedButton.icon(
                 onPressed: isLoading
                     ? null
-                    : () => context.push(
-                        '/delivery-failure',
-                        extra: delivery,
-                      ),
+                    : () => _showReprogramDialog(context, delivery),
                 icon: const Icon(AppIcons.alertTriangle, size: 17),
-                label: const Text('Signaler'),
+                label: const Text('Reprogrammer'),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.error,
-                  side: const BorderSide(
-                    color: AppColors.error,
-                    width: 1.5,
-                  ),
+                  foregroundColor: AppColors.warning,
+                  side: const BorderSide(color: AppColors.warning, width: 1.5),
                   minimumSize: const Size(0, 54),
                   padding: const EdgeInsets.symmetric(horizontal: 18),
                   textStyle: const TextStyle(
@@ -637,13 +723,13 @@ class _StickyActionBar extends StatelessWidget {
                               .trim();
                           final confirmed =
                               await AppDialogs.showDeliveryConfirmationDialog(
-                            context,
-                            blNumber: blNumber,
-                          );
+                                context,
+                                blNumber: blNumber,
+                              );
                           if (confirmed && context.mounted) {
-                            context
-                                .read<DeliveryCubit>()
-                                .validateDelivery(delivery);
+                            context.read<DeliveryCubit>().validateDelivery(
+                              delivery,
+                            );
                           }
                         },
                   icon: isLoading
@@ -688,7 +774,7 @@ class _CompactTimeline extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (status == DeliveryStatus.cancelled) {
+    /*if (status == DeliveryStatus.cancelled) {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -705,6 +791,31 @@ class _CompactTimeline extends StatelessWidget {
               style: TextStyle(
                 color: AppColors.error,
                 fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      );
+    }*/
+    if (status == DeliveryStatus.cancelled) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        margin: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          color: AppColors.warningSoft,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.warning.withAlpha(80)),
+        ),
+        child: Row(
+          children: const [
+            Icon(AppIcons.clock, color: AppColors.warning, size: 18),
+            SizedBox(width: 10),
+            Text(
+              'Livraison reprogrammée',
+              style: TextStyle(
+                color: AppColors.warning,
+                fontWeight: FontWeight.w700,
+                fontSize: 13,
               ),
             ),
           ],
