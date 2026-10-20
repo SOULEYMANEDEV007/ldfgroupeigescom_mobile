@@ -40,7 +40,11 @@ class Delivery extends Equatable {
   });
 
   /// Retourne une copie de la livraison avec un nouveau statut.
-  Delivery copyWith({DeliveryStatus? status, DeliveryNote? deliveryNote}) {
+  Delivery copyWith({
+    DeliveryStatus? status,
+    DeliveryNote? deliveryNote,
+    DateTime? scheduledTime,
+  }) {
     return Delivery(
       id: id,
       tourId: tourId,
@@ -52,7 +56,7 @@ class Delivery extends Equatable {
       address: address,
       phone: phone,
       status: status ?? this.status,
-      scheduledTime: scheduledTime,
+      scheduledTime: scheduledTime ?? this.scheduledTime,
       notes: notes,
       deliveryNote: deliveryNote ?? this.deliveryNote,
     );

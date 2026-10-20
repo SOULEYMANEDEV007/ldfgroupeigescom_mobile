@@ -9,13 +9,15 @@
 
 > **⚠️ RÈGLE ABSOLUE & NON NÉGOCIABLE** :  
 > L'IA intervient strictement comme **ASSISTANT TECHNIQUE** aux côtés du **DÉVELOPPEUR (le seul maître d'œuvre et décideur)**.  
-> **NE JAMAIS COMMENCER À MODIFIER DU CODE DIRECTEMENT DÈS LA RÉCEPTION D'UNE REQUÊTE.**
+> - **NE JAMAIS COMMENCER À MODIFIER DU CODE DIRECTEMENT DÈS LA RÉCEPTION D'UNE REQUÊTE.**  
+> - **NE JAMAIS LANCER DE COMMANDE (TERMINAL, PROCESSUS, TÂCHE EN ARRIÈRE-PLAN) SANS L'ACCORD EXPLICITE PRÉALABLE DU DÉVELOPPEUR.**
 
 ### Le Workflow Strict en 4 Étapes à respecter pour chaque tâche :
-1. **🔍 Analyse préalable** : Diagnostiquer le problème, identifier les causes racines et explorer les options possibles.
+1. **🔍 Analyse préalable** : Diagnostiquer le problème en lecture seule, identifier les causes racines et explorer les options possibles.
 2. **📋 Proposition d'un Plan clair et lisible** : Présenter au développeur un plan d'action structuré détaillant précisément les fichiers concernés, les choix de conception/UI et les étapes envisagées.
-3. **⏸️ Attente de Validation du Développeur** : Demander son avis et attendre son retour ou sa validation explicite ("Go", ajustements, remarques) avant toute action.
-4. **🛠️ Exécution & Restitution** : Appliquer les modifications validées avec rigueur et les documenter.
+3. **⏸️ Attente de Validation du Développeur** : Demander son avis et attendre son retour ou sa validation explicite ("Go", ajustements, remarques) avant toute action ou exécution.
+4. **🛠️ Exécution & Restitution** : Guider le développeur pas à pas ou appliquer les modifications validées avec rigueur et les documenter.
+
 
 ---
 
@@ -364,7 +366,19 @@ flutter run
 
 
 
+### Session du 20/10/2026 — Refonte Reprogrammation BL, 3 Badges de Statut & Consigne d'Exécution Stricte
+- **Directives Fermes du Développeur** :
+  1. **Interdiction formelle absolue** pour l'assistant d'exécuter des commandes terminal ou processus en arrière-plan sans accord préalable explicite.
+  2. Mode de travail : l'assistant guide pas à pas, le développeur applique lui-même les modifications.
+  3. Remplacement sémantique et visuel de « l'échec de livraison » par **« Reprogrammation de livraison »** : un BL reprogrammé n'est pas clôturé, le livreur doit pouvoir revenir dessus et valider sa livraison à tout moment.
+- **Actions & Réalisations en cours** :
+  1. [tour_detail_screen.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/tour/presentation/screens/tour_detail_screen.dart) : Retrait du bouton d'action direct 'Valider' sur les cartes de BL au profit des 3 badges : « En attente », « Reprogrammé » (warning/ambre) et « Livré » (success/vert).
+  2. [delivery.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/delivery/domain/entities/delivery.dart) : Ajout du paramètre `DateTime? scheduledTime` dans `Delivery.copyWith`.
+  3. [delivery_model.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/delivery/data/models/delivery_model.dart) : Priorité accordée à `date_livraison` sur `date_livr` pour récupérer l'heure réelle de validation.
+  4. Diagnostic des boutons sur BL reprogrammé : débloquer la barre d'action `_StickyActionBar` dans [delivery_detail_screen.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/delivery/presentation/screens/delivery_detail_screen.dart) quand `delivery.status == DeliveryStatus.cancelled`.
+
 ---
+
 
 ## 7. 🌿 Informations Git
 

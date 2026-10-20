@@ -32,7 +32,9 @@ class DeliveryModel extends Delivery {
 
       final rawCodeBl = json['code_bl'] ?? livraison?['code_bl'];
       final codeBlStr = rawCodeBl != null
-          ? (rawCodeBl is num ? rawCodeBl.toInt().toString() : rawCodeBl.toString())
+          ? (rawCodeBl is num
+                ? rawCodeBl.toInt().toString()
+                : rawCodeBl.toString())
           : 'N/A';
 
       final clientName = client?['nom_clt']?.toString().trim();
@@ -43,13 +45,26 @@ class DeliveryModel extends Delivery {
           ? address
           : ((city != null && city.isNotEmpty) ? city : 'Abidjan');
 
-      final statutLivraison = json['statut_livraison']?.toString().toUpperCase();
+      final statutLivraison = json['statut_livraison']
+          ?.toString()
+          .toUpperCase();
       final status = _statusFromApiString(statutLivraison);
 
-      final dateStr = livraison?['date_livr']?.toString() ??
-          json['date_livraison']?.toString() ??
-          json['created_at']?.toString();
-      final scheduledTime = DateTime.tryParse(dateStr ?? '') ?? DateTime.now();
+      // ── Date et heure réelles de livraison en priorité ──
+      final rawDateLivraison = json['date_livraison']?.toString().trim();
+      final hasRealDate =
+          rawDateLivraison != null &&
+          rawDateLivraison.isNotEmpty &&
+          rawDateLivraison != 'null';
+
+      final dateStr = hasRealDate
+          ? rawDateLivraison
+          : (livraison?['date_livr']?.toString() ??
+                json['created_at']?.toString());
+
+      final scheduledTime =
+          (dateStr != null ? DateTime.tryParse(dateStr)?.toLocal() : null) ??
+          DateTime.now();
 
       final montArsi = (livraison?['mont_arsi_bl'] as num?)?.toDouble() ?? 0.0;
       final montTva = (livraison?['mont_tva_bl'] as num?)?.toDouble() ?? 0.0;
@@ -98,19 +113,19 @@ class DeliveryModel extends Delivery {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'tour_id': tourId,
-        'client_code': clientCode,
-        'client_name': clientName,
-        'delivery_note_number': deliveryNoteNumber,
-        'weight': weight,
-        'amount': amount,
-        'address': address,
-        'phone': phone,
-        'status': _statusToString(status),
-        'scheduled_time': scheduledTime.toIso8601String(),
-        'notes': notes,
-      };
+    'id': id,
+    'tour_id': tourId,
+    'client_code': clientCode,
+    'client_name': clientName,
+    'delivery_note_number': deliveryNoteNumber,
+    'weight': weight,
+    'amount': amount,
+    'address': address,
+    'phone': phone,
+    'status': _statusToString(status),
+    'scheduled_time': scheduledTime.toIso8601String(),
+    'notes': notes,
+  };
 
   static DeliveryStatus _statusFromApiString(String? value) {
     switch (value) {

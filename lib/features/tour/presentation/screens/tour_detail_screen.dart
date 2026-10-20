@@ -76,6 +76,7 @@ class _TourDetailScreenState extends State<TourDetailScreen> {
               if (idx != -1) {
                 _deliveries[idx] = _deliveries[idx].copyWith(
                   status: DeliveryStatus.delivered,
+                  scheduledTime: DateTime.now(),
                 );
               }
             });
@@ -315,6 +316,7 @@ class _TourDetailScreenState extends State<TourDetailScreen> {
                           setState(() {
                             _deliveries[index] = delivery.copyWith(
                               status: DeliveryStatus.delivered,
+                              scheduledTime: DateTime.now(),
                             );
                           });
                           try {
