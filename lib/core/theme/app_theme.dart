@@ -15,39 +15,46 @@ class AppTheme {
         error: AppColors.error,
       ),
 
-      // ── Typographie Plus Jakarta Sans ───────────────────────────────────────
+      // ── Typographie Plus Jakarta Sans optimisée Tablette ────────────────────
       textTheme: GoogleFonts.plusJakartaSansTextTheme().copyWith(
         displayLarge: GoogleFonts.plusJakartaSans(
           color: AppColors.textPrimary,
-          fontWeight: FontWeight.w800,
-          fontSize: 34,
+          fontWeight: FontWeight.w900,
+          fontSize: 36,
         ),
         headlineMedium: GoogleFonts.plusJakartaSans(
           color: AppColors.textPrimary,
-          fontWeight: FontWeight.w700,
-          fontSize: 24,
+          fontWeight: FontWeight.w800,
+          fontSize: 26,
         ),
         titleLarge: GoogleFonts.plusJakartaSans(
           color: AppColors.textPrimary,
-          fontWeight: FontWeight.w600,
-          fontSize: 20,
+          fontWeight: FontWeight.w800,
+          fontSize: 22,
         ),
         titleMedium: GoogleFonts.plusJakartaSans(
           color: AppColors.textPrimary,
-          fontWeight: FontWeight.w600,
-          fontSize: 16,
+          fontWeight: FontWeight.w700,
+          fontSize: 18,
         ),
         bodyLarge: GoogleFonts.plusJakartaSans(
           color: AppColors.textPrimary,
-          fontSize: 15,
+          fontWeight: FontWeight.w600,
+          fontSize: 16.5,
         ),
         bodyMedium: GoogleFonts.plusJakartaSans(
           color: AppColors.textSecondary,
+          fontWeight: FontWeight.w500,
+          fontSize: 14.5,
+        ),
+        bodySmall: GoogleFonts.plusJakartaSans(
+          color: AppColors.textSecondary,
+          fontWeight: FontWeight.w600,
           fontSize: 13,
         ),
         labelLarge: GoogleFonts.plusJakartaSans(
-          fontWeight: FontWeight.w600,
-          fontSize: 15,
+          fontWeight: FontWeight.w700,
+          fontSize: 16,
           letterSpacing: 0.5,
         ),
       ),
@@ -58,14 +65,14 @@ class AppTheme {
           backgroundColor: AppColors.primary,
           foregroundColor: AppColors.textOnPrimary,
           elevation: 0,
-          minimumSize: const Size(double.infinity, 56),
+          minimumSize: const Size(double.infinity, 58),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
           textStyle: GoogleFonts.plusJakartaSans(
-            fontWeight: FontWeight.w700,
-            fontSize: 15,
+            fontWeight: FontWeight.w800,
+            fontSize: 16.5,
             letterSpacing: 0.5,
           ),
         ),
@@ -76,13 +83,13 @@ class AppTheme {
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.error,
           side: const BorderSide(color: AppColors.error, width: 1.5),
-          minimumSize: const Size(double.infinity, 56),
+          minimumSize: const Size(double.infinity, 58),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
           textStyle: GoogleFonts.plusJakartaSans(
-            fontWeight: FontWeight.w600,
-            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            fontSize: 16,
           ),
         ),
       ),
@@ -152,8 +159,8 @@ class AppTheme {
         iconTheme: const IconThemeData(color: AppColors.textOnPrimary),
         titleTextStyle: GoogleFonts.plusJakartaSans(
           color: AppColors.textOnPrimary,
-          fontSize: 18,
-          fontWeight: FontWeight.w700,
+          fontSize: 20,
+          fontWeight: FontWeight.w800,
         ),
       ),
 
@@ -166,11 +173,11 @@ class AppTheme {
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           final isSelected = states.contains(WidgetState.selected);
           return GoogleFonts.plusJakartaSans(
-            fontSize: 11,
-            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+            fontSize: 12.5,
+            fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
             color: isSelected
                 ? AppColors.primaryDark
-                : AppColors.primaryDark.withValues(alpha: 0.5),
+                : AppColors.primaryDark.withValues(alpha: 0.65),
           );
         }),
         iconTheme: WidgetStateProperty.resolveWith((states) {
@@ -178,12 +185,12 @@ class AppTheme {
           return IconThemeData(
             color: isSelected
                 ? AppColors.primaryDark
-                : AppColors.primaryDark.withValues(alpha: 0.5),
-            size: 22,
+                : AppColors.primaryDark.withValues(alpha: 0.65),
+            size: 24,
           );
         }),
         elevation: 8,
-        height: 64,
+        height: 68,
       ),
 
       // ── Divider ───────────────────────────────────────────────────────────

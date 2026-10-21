@@ -16,6 +16,7 @@ import '../../../../core/services/location_service.dart';
 import '../../domain/entities/delivery.dart';
 import '../bloc/delivery_cubit.dart';
 import '../../../../core/widgets/ldf_pattern_background.dart';
+import '../../../tour/data/datasources/tour_local_data_source.dart';
 
 const _defaultLatLng = LatLng(5.3600, -4.0083); // Abidjan, Côte d'Ivoire
 
@@ -41,11 +42,17 @@ class _DeliveryDetailView extends StatelessWidget {
     return BlocListener<DeliveryCubit, DeliveryState>(
       listener: (context, state) {
         if (state is DeliveryUpdated) {
+          final isOffline =
+              getIt<TourLocalDataSource>().isPendingSync(state.delivery.id);
           // Le retour à l'écran précédent se fait APRÈS fermeture du popup.
           AppFeedback.success(
             context,
-            'Livraison confirmée avec succès',
-            title: 'Livraison confirmée',
+            isOffline
+                ? 'Livraison enregistrée en local (mode hors-ligne).\nElle sera synchronisée dès le retour du réseau.'
+                : 'Livraison confirmée avec succès',
+            title: isOffline
+                ? 'Enregistrée hors-ligne'
+                : 'Livraison confirmée',
           ).then((_) {
             if (context.mounted) context.pop(true);
           });
@@ -224,8 +231,8 @@ class _DeliveryDetailView extends StatelessWidget {
     label.toUpperCase(),
     style: const TextStyle(
       color: AppColors.textSecondary,
-      fontWeight: FontWeight.bold,
-      fontSize: 11,
+      fontWeight: FontWeight.w800,
+      fontSize: 13,
       letterSpacing: 1.2,
     ),
   );
@@ -554,7 +561,8 @@ class _KpiCard extends StatelessWidget {
             label,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: AppColors.textSecondary,
-              fontWeight: FontWeight.w500,
+              fontWeight: FontWeight.w700,
+              fontSize: 13,
             ),
           ),
           const SizedBox(height: 3),
@@ -562,7 +570,10 @@ class _KpiCard extends StatelessWidget {
             value,
             style: Theme.of(
               context,
-            ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+            ).textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w800,
+              fontSize: 15.5,
+            ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -870,26 +881,26 @@ class _CompactTimeline extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 28,
-                height: 28,
+                width: 32,
+                height: 32,
                 decoration: BoxDecoration(
                   color: isActive ? AppColors.primary : AppColors.border,
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
                   steps[idx].$1,
-                  size: 14,
+                  size: 16,
                   color: isActive ? Colors.white : AppColors.textSecondary,
                 ),
               ),
-              const SizedBox(height: 2),
+              const SizedBox(height: 4),
               Text(
                 steps[idx].$2,
                 style: TextStyle(
-                  fontSize: 9,
+                  fontSize: 12,
                   fontWeight: current == idx
-                      ? FontWeight.w700
-                      : FontWeight.w500,
+                      ? FontWeight.w800
+                      : FontWeight.w600,
                   color: isActive ? AppColors.primary : AppColors.textSecondary,
                 ),
               ),

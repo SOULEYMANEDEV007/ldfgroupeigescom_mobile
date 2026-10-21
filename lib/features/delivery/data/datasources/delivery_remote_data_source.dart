@@ -2,8 +2,10 @@ import 'package:dio/dio.dart';
 import 'package:injectable/injectable.dart';
 
 import '../../../../core/di/app_environments.dart';
+import '../../../../core/di/injection.dart';
 import '../../../../core/network/api_endpoints.dart';
 import '../../../../core/network/api_error_handler.dart';
+import '../../../tour/data/datasources/tour_local_data_source.dart';
 import '../../domain/entities/delivery.dart';
 import '../models/delivery_model.dart';
 
@@ -21,8 +23,15 @@ abstract class DeliveryRemoteDataSource {
 @LazySingleton(as: DeliveryRemoteDataSource, env: [kRealEnv])
 class RealDeliveryRemoteDataSourceImpl implements DeliveryRemoteDataSource {
   final Dio _dio;
+  final TourLocalDataSource? _localDataSourceOverride;
 
-  RealDeliveryRemoteDataSourceImpl(this._dio);
+  RealDeliveryRemoteDataSourceImpl(
+    this._dio, {
+    TourLocalDataSource? localDataSource,
+  }) : _localDataSourceOverride = localDataSource;
+
+  TourLocalDataSource get _localDataSource =>
+      _localDataSourceOverride ?? getIt<TourLocalDataSource>();
 
   @override
   Future<DeliveryModel> getDeliveryById(String id) async {
@@ -49,7 +58,7 @@ class RealDeliveryRemoteDataSourceImpl implements DeliveryRemoteDataSource {
     String? tourId,
     String? notes,
   }) async {
-    // Si validation de livraison, envoi de la requête au backend
+    // Si validation de livraison, envoi ou mise en file d'attente locale
     if (status == DeliveryStatus.delivered) {
       final cleanLigneId = id.trim();
       final cleanTournee =
@@ -60,16 +69,55 @@ class RealDeliveryRemoteDataSourceImpl implements DeliveryRemoteDataSource {
         );
       }
 
-      await _dio.post(
-        ApiEndpoints.validateDelivery(cleanLigneId),
-        data: {
-          'observation_livraison': notes ?? '',
-          'tournee': cleanTournee,
-        },
-        options: Options(
-          extra: {'noSessionExpire': true},
-        ),
-      );
+      try {
+        await _dio.post(
+          ApiEndpoints.validateDelivery(cleanLigneId),
+          data: {
+            'observation_livraison': notes ?? '',
+            'tournee': cleanTournee,
+          },
+          options: Options(
+            extra: {'noSessionExpire': true},
+          ),
+        );
+
+        // ✅ Succès en ligne : retrait de la file d'attente et mise à jour locale
+        await _localDataSource.removePendingDelivery(cleanLigneId);
+        await _localDataSource.updateCachedDeliveryStatus(
+          codeLigne: cleanLigneId,
+          status: 'LIVREE',
+          notes: notes,
+        );
+      } on DioException catch (e) {
+        if (_isNetworkOfflineError(e)) {
+          // 📦 Mode Hors-Ligne : Mise en file d'attente et mise à jour optimiste du cache local
+          await _localDataSource.enqueuePendingDelivery(
+            codeLigne: cleanLigneId,
+            tourId: cleanTournee,
+            notes: notes,
+          );
+          await _localDataSource.updateCachedDeliveryStatus(
+            codeLigne: cleanLigneId,
+            status: 'LIVREE',
+            notes: notes,
+          );
+        } else {
+          // Vraie erreur applicative serveur (401, 403, 500...), on propage
+          rethrow;
+        }
+      } catch (e) {
+        // En cas d'erreur de socket ou d'exception réseau non-Dio
+        await _localDataSource.enqueuePendingDelivery(
+          codeLigne: cleanLigneId,
+          tourId: cleanTournee,
+          notes: notes,
+        );
+        await _localDataSource.updateCachedDeliveryStatus(
+          codeLigne: cleanLigneId,
+          status: 'LIVREE',
+          notes: notes,
+        );
+      }
     }
 
     return DeliveryModel(
@@ -86,6 +134,15 @@ class RealDeliveryRemoteDataSourceImpl implements DeliveryRemoteDataSource {
       scheduledTime: DateTime.now(),
       notes: notes ?? '',
     );
+  }
+
+  bool _isNetworkOfflineError(DioException e) {
+    if (e.response != null) {
+      // Le serveur a répondu (code HTTP émis) -> ce n'est pas une panne réseau
+      return false;
+    }
+    // Pas de réponse HTTP du serveur -> connexion impossible, réseau coupé, timeout
+    return true;
   }
 }
 

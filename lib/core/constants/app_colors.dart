@@ -31,7 +31,8 @@ class AppColors {
 
   // ─── Textes ────────────────────────────────────────────────────────────────
   static const Color textPrimary = Color(0xFF1E293B);
-  static const Color textSecondary = Color(0xFF64748B);
+  /// Gris ardoise soutenu et contrasté (haute lisibilité sur tablette et en extérieur)
+  static const Color textSecondary = Color(0xFF334155);
   static const Color textOnPrimary = Colors.white;
   static const Color textOnYellow = Color(0xFF1E293B);
 

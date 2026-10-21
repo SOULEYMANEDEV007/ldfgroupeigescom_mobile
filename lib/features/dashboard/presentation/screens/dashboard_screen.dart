@@ -81,7 +81,9 @@ class DashboardView extends StatelessWidget {
                                     'Bonjour ${getIt<TokenManager>().getFullName() ?? getIt<TokenManager>().getUserName() ?? 'Livreur'} 👋',
                                     style: Theme.of(context).textTheme.bodyLarge
                                         ?.copyWith(
-                                          color: Colors.white.withAlpha(180),
+                                          color: Colors.white.withAlpha(220),
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
                                         ),
                                   ),
                                   const SizedBox(height: 4),
@@ -92,7 +94,8 @@ class DashboardView extends StatelessWidget {
                                         .headlineSmall
                                         ?.copyWith(
                                           color: Colors.white,
-                                          fontWeight: FontWeight.bold,
+                                          fontSize: 26,
+                                          fontWeight: FontWeight.w800,
                                         ),
                                   ),
                                 ],
@@ -171,8 +174,8 @@ class DashboardView extends StatelessWidget {
                                                 : 'Aucune tournée en cours',
                                             style: const TextStyle(
                                               color: Colors.white,
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 14,
+                                              fontWeight: FontWeight.w800,
+                                              fontSize: 16,
                                             ),
                                           ),
                                           Text(
@@ -183,9 +186,10 @@ class DashboardView extends StatelessWidget {
                                                 : "Aucune tournée active",
                                             style: TextStyle(
                                               color: Colors.white.withAlpha(
-                                                160,
+                                                220,
                                               ),
-                                              fontSize: 11,
+                                              fontSize: 13,
+                                              fontWeight: FontWeight.w600,
                                             ),
                                             maxLines: 1,
                                             overflow: TextOverflow.ellipsis,
@@ -197,8 +201,8 @@ class DashboardView extends StatelessWidget {
                                       onTap: () => context.go('/tour'),
                                       child: Container(
                                         padding: const EdgeInsets.symmetric(
-                                          horizontal: 12,
-                                          vertical: 5,
+                                          horizontal: 14,
+                                          vertical: 6,
                                         ),
                                         decoration: BoxDecoration(
                                           color: AppColors.navBarYellow,
@@ -210,8 +214,8 @@ class DashboardView extends StatelessWidget {
                                           'Voir',
                                           style: TextStyle(
                                             color: AppColors.primaryDark,
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.bold,
+                                            fontSize: 13.5,
+                                            fontWeight: FontWeight.w800,
                                           ),
                                         ),
                                       ),
@@ -226,16 +230,17 @@ class DashboardView extends StatelessWidget {
                                     Text(
                                       'Progression',
                                       style: TextStyle(
-                                        color: Colors.white.withAlpha(160),
-                                        fontSize: 11,
+                                        color: Colors.white.withAlpha(220),
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
                                       ),
                                     ),
                                     Text(
                                       '${stats.completedDeliveries} / ${stats.totalDeliveries} livrées',
                                       style: const TextStyle(
                                         color: Colors.white,
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w800,
                                       ),
                                     ),
                                   ],
@@ -283,8 +288,9 @@ class DashboardView extends StatelessWidget {
                               style: Theme.of(context).textTheme.labelSmall
                                   ?.copyWith(
                                     color: AppColors.textSecondary,
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: 1.5,
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 12.5,
+                                    letterSpacing: 1.2,
                                   ),
                             ),
                             const SizedBox(height: 14),
@@ -350,8 +356,9 @@ class DashboardView extends StatelessWidget {
                               style: Theme.of(context).textTheme.labelSmall
                                   ?.copyWith(
                                     color: AppColors.textSecondary,
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: 1.5,
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 12.5,
+                                    letterSpacing: 1.2,
                                   ),
                             ),
                             const SizedBox(height: 14),
@@ -458,17 +465,18 @@ class _StatCard extends StatelessWidget {
                   Text(
                     count,
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      fontSize: 22,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 26,
                       color: accent ? Colors.white : AppColors.textPrimary,
                     ),
                   ),
                   Text(
                     title,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13,
                       color: accent
-                          ? Colors.white.withAlpha(200)
+                          ? Colors.white.withAlpha(220)
                           : AppColors.textSecondary,
                     ),
                     maxLines: 1,
@@ -517,14 +525,14 @@ class _QuickActionButton extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: AppColors.primary, size: 24),
-            const SizedBox(height: 6),
+            Icon(icon, color: AppColors.primary, size: 26),
+            const SizedBox(height: 8),
             Text(
               label,
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w800,
                 color: AppColors.textPrimary,
-                fontSize: 11,
+                fontSize: 13,
               ),
               textAlign: TextAlign.center,
               maxLines: 1,

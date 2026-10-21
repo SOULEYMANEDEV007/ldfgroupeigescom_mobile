@@ -13,6 +13,7 @@ import '../../../dashboard/presentation/bloc/dashboard_cubit.dart';
 import '../../../delivery/domain/entities/delivery.dart';
 import '../../../delivery/presentation/bloc/delivery_cubit.dart';
 import '../../domain/entities/tour_entity.dart';
+import '../../data/datasources/tour_local_data_source.dart';
 
 class TourDetailScreen extends StatefulWidget {
   final TourEntity tour;
@@ -81,10 +82,16 @@ class _TourDetailScreenState extends State<TourDetailScreen> {
                 );
               }
             });
+            final isOffline =
+                getIt<TourLocalDataSource>().isPendingSync(updatedId);
             AppFeedback.success(
               context,
-              'Livraison confirmée avec succès',
-              title: 'Livraison confirmée',
+              isOffline
+                  ? 'Livraison enregistrée en local (mode hors-ligne).\nElle sera synchronisée dès le retour du réseau.'
+                  : 'Livraison confirmée avec succès',
+              title: isOffline
+                  ? 'Enregistrée hors-ligne'
+                  : 'Livraison confirmée',
             );
             try {
               getIt<DashboardCubit>().fetchStats();
@@ -237,15 +244,15 @@ class _TourDetailScreenState extends State<TourDetailScreen> {
                           const Text(
                             '📊 Progression',
                             style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
                               color: AppColors.textPrimary,
                             ),
                           ),
                           Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
+                              horizontal: 12,
+                              vertical: 5,
                             ),
                             decoration: BoxDecoration(
                               color: progress == 1.0
@@ -256,8 +263,8 @@ class _TourDetailScreenState extends State<TourDetailScreen> {
                             child: Text(
                               '$completedDeliveries/$totalDeliveries livrées',
                               style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w700,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w800,
                                 color: progress == 1.0
                                     ? AppColors.success
                                     : AppColors.primary,
@@ -282,8 +289,8 @@ class _TourDetailScreenState extends State<TourDetailScreen> {
                       Text(
                         '${(progress * 100).toStringAsFixed(0)}% complété',
                         style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w700,
                           color: AppColors.textSecondary,
                         ),
                       ),
@@ -408,29 +415,30 @@ class _DeliveryListCard extends StatelessWidget {
                     Text(
                       delivery.clientName,
                       style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 16,
                         color: AppColors.textPrimary,
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 5),
+                    const SizedBox(height: 6),
 
                     // Ligne 2 : Adresse
                     Row(
                       children: [
                         const Icon(
                           AppIcons.mapPin,
-                          size: 13,
+                          size: 14,
                           color: AppColors.textSecondary,
                         ),
-                        const SizedBox(width: 4),
+                        const SizedBox(width: 5),
                         Expanded(
                           child: Text(
                             delivery.address,
                             style: const TextStyle(
-                              fontSize: 12,
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w600,
                               color: AppColors.textSecondary,
                             ),
                             maxLines: 1,
@@ -439,22 +447,22 @@ class _DeliveryListCard extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 5),
+                    const SizedBox(height: 6),
 
                     // Ligne 3 : Heure + BL
                     Row(
                       children: [
                         const Icon(
                           AppIcons.clock,
-                          size: 12,
+                          size: 13,
                           color: AppColors.textSecondary,
                         ),
-                        const SizedBox(width: 4),
+                        const SizedBox(width: 5),
                         Text(
                           DateFormat('HH:mm').format(delivery.scheduledTime),
                           style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
                             color: AppColors.textPrimary,
                           ),
                         ),
@@ -462,18 +470,18 @@ class _DeliveryListCard extends StatelessWidget {
                         if (delivery.deliveryNoteNumber.isNotEmpty)
                           Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
+                              horizontal: 8,
+                              vertical: 3,
                             ),
                             decoration: BoxDecoration(
                               color: AppColors.primarySoft,
-                              borderRadius: BorderRadius.circular(4),
+                              borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(
                               delivery.deliveryNoteNumber,
                               style: const TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w700,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w800,
                                 color: AppColors.primary,
                               ),
                             ),
@@ -561,18 +569,28 @@ class _DeliveryListCard extends StatelessWidget {
   }
 
   Widget _buildStatusBadge(DeliveryStatus status) {
+    final isPendingSync =
+        getIt<TourLocalDataSource>().isPendingSync(delivery.id);
+
     final (
       Color color,
       Color bgColor,
       IconData icon,
       String label,
     ) = switch (status) {
-      DeliveryStatus.delivered => (
-        AppColors.success,
-        AppColors.successSoft,
-        AppIcons.checkCircle,
-        'Livré',
-      ),
+      DeliveryStatus.delivered => isPendingSync
+          ? (
+              AppColors.warning,
+              AppColors.warningSoft,
+              AppIcons.cloudOff,
+              'Livré (En attente sync)',
+            )
+          : (
+              AppColors.success,
+              AppColors.successSoft,
+              AppIcons.checkCircle,
+              'Livré',
+            ),
       DeliveryStatus.cancelled => (
         AppColors.warning,
         AppColors.warningSoft,
@@ -588,22 +606,22 @@ class _DeliveryListCard extends StatelessWidget {
     };
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: bgColor,
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withAlpha(60)),
+        border: Border.all(color: color.withAlpha(70)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 13, color: color),
-          const SizedBox(width: 5),
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 6),
           Text(
             label,
             style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.bold,
+              fontSize: 12.5,
+              fontWeight: FontWeight.w800,
               color: color,
             ),
           ),

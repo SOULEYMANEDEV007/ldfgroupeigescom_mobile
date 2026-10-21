@@ -18,7 +18,7 @@ class DeliveryRepositoryImpl implements DeliveryRepository {
       final delivery = await remoteDataSource.getDeliveryById(id);
       return Right(delivery);
     } catch (e) {
-      return Left(e.toString());
+      return Left(ApiErrorHandler.message(e));
     }
   }
 

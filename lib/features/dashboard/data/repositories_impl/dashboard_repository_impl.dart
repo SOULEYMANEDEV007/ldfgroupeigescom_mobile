@@ -1,6 +1,7 @@
 import 'package:dartz/dartz.dart';
 import 'package:injectable/injectable.dart';
 
+import '../../../../core/network/api_error_handler.dart';
 import '../../domain/entities/dashboard_stats.dart';
 import '../../domain/repositories/dashboard_repository.dart';
 import '../datasources/dashboard_remote_data_source.dart';
@@ -17,7 +18,8 @@ class DashboardRepositoryImpl implements DashboardRepository {
       final stats = await remoteDataSource.getStats();
       return Right(stats);
     } catch (e) {
-      return Left(e.toString());
+      // 🛡️ Message d'erreur utilisateur clair sans données techniques
+      return Left(ApiErrorHandler.message(e));
     }
   }
 }

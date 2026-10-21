@@ -419,11 +419,93 @@ flutter run
      - [settings_screen.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/settings/presentation/screens/settings_screen.dart) (Paramètres).
      - [notifications_screen.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/notifications/presentation/screens/notifications_screen.dart) (Notifications).
      *(L'écran [delivery_detail_screen.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/delivery/presentation/screens/delivery_detail_screen.dart) avait été intégré préalablement).*
-- **Statut** : Harmonisation visuelle 100% terminée, identité de marque LDF Groupe affirmée et élégante.
+### Suite Session du 21/10/2026 — Mode Hors-Ligne (Étape 1 : Cache & Sécurisation des Erreurs)
+- **Demande du Développeur** :
+  1. Activer la consultation hors-ligne des tournées et livraisons (lorsqu'il n'y a pas d'Internet ou en zone blanche).
+  2. **Sécurité & Confidentialité stricte** : Interdiction absolue de laisser fuiter des messages d'erreur techniques backend (types d'erreurs API, stack traces, URLs et adresses IP privées comme `192.168.1.238`) lors d'une rupture de connexion. Traduire systématiquement toute erreur en texte clair, bienveillant et en français.
+- **Réalisations Effectuées** :
+  1. **Création de la source locale [tour_local_data_source.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/tour/data/datasources/tour_local_data_source.dart)** :
+     - Stockage sécurisé des tournées au format JSON dans `SharedPreferences` (`LDF_CACHED_TOURS_ROWS`).
+     - Horodatage de synchronisation (`LDF_TOURS_LAST_SYNC_TIME`) pour le suivi.
+     - Enregistrement dans GetIt via [injection.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/core/di/injection.dart).
+  2. **Bascule transparente en mode hors-ligne dans [tour_remote_data_source.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/tour/data/datasources/tour_remote_data_source.dart)** :
+     - Dès que l'API répond, les données sont mises en cache silencieusement.
+     - En cas d'indisponibilité du réseau (`DioException`), bascule automatique sur les tournées en cache local sans bloquer l'application.
+     - Le Dashboard recalcule automatiquement ses KPI depuis ce cache local en mode hors-ligne.
+  3. **Assainissement complet des messages d'erreur (Sécurité)** :
+     - Remplacement de tous les `e.toString()` résiduels par `ApiErrorHandler.message(e)` dans :
+       - [tour_repository_impl.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/tour/data/repositories_impl/tour_repository_impl.dart).
+       - [dashboard_repository_impl.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/dashboard/data/repositories_impl/dashboard_repository_impl.dart).
+       - [delivery_repository_impl.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/delivery/data/repositories_impl/delivery_repository_impl.dart).
+     - Zéro fuite d'adresses IP privées ou d'erreurs système : les coupures affichent sobrement *« Impossible de joindre le serveur. Vérifiez votre connexion réseau. »*.
+  4. **Amélioration de l'UI d'erreur dans [tour_screen.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/tour/presentation/screens/tour_screen.dart)** :
+     - Remplacement de l'alerte technique rouge par un état sobre avec icône `cloudOff`, message explicatif en français et bouton vert **« Réessayer »** pour relancer la synchronisation.
+### Suite Session du 21/10/2026 — Mode Hors-Ligne (Étape 2 : Validation Hors-Ligne & File d'Attente de Synchronisation)
+- **Demande du Développeur** :
+  1. Permettre la validation des livraisons même lorsque l'appareil est complètement hors-ligne (pas d'accès au réseau local ou à Internet).
+  2. Remplacer l'échec réseau précédent (*« Impossible de joindre le serveur »*) par un enregistrement local en file d'attente (`Queue`).
+  3. Mettre à jour immédiatement et de manière optimiste le statut de la livraison dans le cache local (`LDF_CACHED_TOURS_ROWS`) pour que les compteurs du Dashboard et la vue de la tournée passent à « Livré » sans délai.
+  4. Afficher des messages clairs et bienveillants informant le livreur que la validation a été enregistrée en local et partira dès le rétablissement de la connexion.
+  5. Synchroniser automatiquement toutes les validations en attente dès que l'application retrouve le réseau.
+- **Réalisations Effectuées** :
+  1. **Enrichissement de [tour_local_data_source.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/tour/data/datasources/tour_local_data_source.dart)** :
+     - Ajout de la file d'attente persistante `LDF_PENDING_DELIVERY_SYNC_QUEUE` : `enqueuePendingDelivery()`, `getPendingDeliveries()`, `removePendingDelivery()`, `isPendingSync()`, `pendingDeliveriesCount`.
+     - Méthode de mise à jour optimiste directe du cache JSON : `updateCachedDeliveryStatus(codeLigne, status, notes)`.
+  2. **Interception Hors-Ligne dans [delivery_remote_data_source.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/delivery/data/datasources/delivery_remote_data_source.dart)** :
+     - En cas d'échec de communication réseau lors de `POST .../valider-livraison/` (`DioException` sans réponse serveur ou exception socket), l'action est enregistrée en file d'attente locale et le cache est muté en `LIVREE`.
+     - Renvoi d'un `DeliveryModel` avec statut `delivered` (au lieu de lever une exception réseau).
+  3. **Moteur d'Auto-Synchronisation dans [tour_remote_data_source.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/tour/data/datasources/tour_remote_data_source.dart)** :
+     - Méthode `syncPendingDeliveries()` qui rejoue séquentiellement les validations de la file d'attente vers l'API backend dès que la connectivité est rétablie.
+     - Appel automatique de la synchronisation au début de `getTours()`.
+     - Protection anti-clignotement : si des lignes sont encore en file d'attente locale, leur statut `LIVREE` est préservé lors du rechargement des tournées du serveur.
+  4. **Feedback & Badges UI Adaptatifs** :
+     - [tour_detail_screen.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/tour/presentation/screens/tour_detail_screen.dart) : Badge d'état `Livré (En attente sync)` avec icône `cloudOff` orangée pour les livraisons validées hors-ligne, et popup de confirmation explicite : *« Livraison enregistrée en local (mode hors-ligne). Elle sera synchronisée dès le retour du réseau. »*.
+     - [delivery_detail_screen.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/delivery/presentation/screens/delivery_detail_screen.dart) et [delivery_validation_screen.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/delivery/presentation/screens/delivery_validation_screen.dart) : Notification claire de sauvegarde hors-ligne.
+### Suite Session du 21/10/2026 — Optimisation Typographique & Lisibilité Terrain (Mini-Tablette 7")
+- **Demande du Développeur** :
+  1. Renforcer la mise en forme et la présence visuelle de la police d'écriture dans toute l'application.
+  2. Adapter l'ergonomie visuelle à l'usage réel sur mini-tablette (7 pouces en livraison/véhicule) pour que les textes ressortent nettement sans effort de lecture.
+- **Réalisations Effectuées** :
+  1. **Socle Thème & Contraste ([app_colors.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/core/constants/app_colors.dart) & [app_theme.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/core/theme/app_theme.dart))** :
+     - Rehaussement du contraste de `AppColors.textSecondary` passant de `#64748B` (gris clair) à `#334155` (ardoise soutenu haute lisibilité).
+     - TextTheme agrandi et épaissi : `displayLarge` (36px w900), `headlineMedium` (26px w800), `titleLarge` (22px w800), `titleMedium` (18px w700), `bodyLarge` (16.5px w600), `bodyMedium` (14.5px w500), `bodySmall` (13px w600).
+     - Boutons principaux rehaussés à 16.5px (w800) et hauteur tactile de 58px.
+     - Navigation Bar : labels à 12.5px (w800/w600), icônes à 24px, hauteur portée à 68px.
+  2. **Écran « Mes Tournées » ([tour_screen.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/tour/presentation/screens/tour_screen.dart))** :
+     - Cartes : Référence (13.5px w800), badge statut (12.5px w800), nom de tournée (16.5px w800), compteurs et métadonnées (13px w600).
+  3. **Écran « Détail de Tournée » ([tour_detail_screen.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/tour/presentation/screens/tour_detail_screen.dart))** :
+     - Cartes de livraison : Nom client (16px w800), adresse (13.5px w600), heure et N° BL (13px/12px w800), badge statut (12.5px w800).
+     - Barre de progression agrandie avec pourcentages et compteurs nets (13px w800).
+  4. **Tableau de Bord ([dashboard_screen.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/dashboard/presentation/screens/dashboard_screen.dart))** :
+     - Chiffres des cartes KPI portés à 26px (w900) et libellés à 13px (w700).
+     - Salutation (16px w600) et Titre (26px w800).
+     - Bannière tournée active plus contrastée et visible.
+  5. **Écran « Détail Livraison » ([delivery_detail_screen.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/delivery/presentation/screens/delivery_detail_screen.dart))** :
+     - Timeline de suivi : labels agrandis de 9px à 12px (w800) avec bulles à 32px.
+     - Cartes KPI de livraison : libellés à 13px (w700) et valeurs à 15.5px (w800).
+  6. **Barre de Navigation ([main_screen.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/dashboard/presentation/screens/main_screen.dart))** :
+     - Agrandissement des libellés de 11.5px à **14px** avec graisses ultra-visibles (`FontWeight.w900` actif / `FontWeight.w700` inactif).
+     - Augmentation de la taille des icônes de 23px à **27px** avec coussin tactile élargi (22x6px).
+     - Contraste renforcé des onglets inactifs sur le fond jaune (`withAlpha(195)` au lieu de `110`).
+     - Hauteur de barre portée à **74px** adaptée au format tablette.
+- **Validation Statique** :
+  - Correction du résidu de syntaxe ligne 245 dans [dashboard_screen.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/dashboard/presentation/screens/dashboard_screen.dart).
+  - Remplacement de l'appel dynamique par la constante `Color(0xDCFFFFFF)` dans le header de [tour_screen.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/tour/presentation/screens/tour_screen.dart).
+- **Statut** : Base de code assainie, 0 erreur de syntaxe.
+
+### Suite Session du 21/10/2026 — Correction des Statuts de Tournée sur la Page « Tournées »
+- **Demande du Développeur** :
+  - Sur la page « Tournées » ([tour_screen.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/tour/presentation/screens/tour_screen.dart)), les statuts de **Tournée** « Terminé » et « En cours » apparaissaient tous les deux en vert, créant une confusion visuelle entre une mission active et une mission clôturée.
+- **Actions réalisées** :
+  1. Modification de `_statusColor` et `_statusBgColor` pour les entités `TourStatus` dans [tour_screen.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/tour/presentation/screens/tour_screen.dart) :
+     - `TourStatus.inProgress` (Tournée En cours) ➔ `AppColors.accentBlue` (`#2F80ED`) avec fond `AppColors.accentBlueSoft` (`#EFF6FF`).
+     - `TourStatus.completed` (Tournée Terminée) ➔ `AppColors.success` (`#10B981`) avec fond `AppColors.successSoft` (`#ECFDF5`).
+     - `TourStatus.pending` (Tournée Programmée) ➔ `AppColors.warning` (`#F59E0B`) avec fond `AppColors.warningSoft` (`#FFFBEB`).
+     - `TourStatus.cancelled` (Tournée Annulée) ➔ `AppColors.error` (`#EF4444`) avec fond `AppColors.errorSoft` (`#FEF2F2`).
+  2. Harmonisation de la barre de progression sur la carte de tournée : jauge en `AppColors.accentBlue` durant la progression (< 100%), puis bascule en `AppColors.success` une fois la totalité des livraisons de la tournée achevée (100%).
+- **Statut** : Distinction visuelle immédiate et 100% conforme au standard logistique et à la charte LdF.
 
 ---
-
-
 
 ## 7. 🌿 Informations Git
 

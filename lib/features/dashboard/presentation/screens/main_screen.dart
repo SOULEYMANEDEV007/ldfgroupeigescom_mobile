@@ -41,16 +41,15 @@ class _LdfNavBar extends StatelessWidget {
       elevation: 12,
       shadowColor: Colors.black.withAlpha(50),
       child: SizedBox(
-        // 68 px de zone cliquable + safe area système en dessous
-        height: 68 + bottomInset,
+        // 74 px de zone cliquable + safe area système en dessous (ergonomie tablette)
+        height: 74 + bottomInset,
         child: Column(
           children: [
             // ── Séparateur fin vert foncé en haut ─────────────────────────
-            Container(height: 1, color: AppColors.primaryDark.withAlpha(30)),
-            // ── Contenu centré sur 68 px ───────────────────────────────────
+            Container(height: 1, color: AppColors.primaryDark.withAlpha(35)),
+            // ── Contenu centré sur 74 px ───────────────────────────────────
             Expanded(
               child: Padding(
-                // Pas de padding bas : la safe area est gérée par SizedBox
                 padding: const EdgeInsets.only(top: 4),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
@@ -101,10 +100,11 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Vert foncé LdF très net et contrasté sur le fond jaune
     final iconColor =
-        selected ? AppColors.primaryDark : AppColors.primaryDark.withAlpha(110);
+        selected ? AppColors.primaryDark : AppColors.primaryDark.withAlpha(195);
     final labelColor =
-        selected ? AppColors.primaryDark : AppColors.primaryDark.withAlpha(110);
+        selected ? AppColors.primaryDark : AppColors.primaryDark.withAlpha(195);
 
     return Expanded(
       child: GestureDetector(
@@ -117,30 +117,27 @@ class _NavItem extends StatelessWidget {
             AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               curve: Curves.easeInOut,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 6),
               decoration: BoxDecoration(
                 color: selected
-                    ? AppColors.primaryDark.withAlpha(22)
+                    ? AppColors.primaryDark.withAlpha(28)
                     : Colors.transparent,
                 borderRadius: BorderRadius.circular(24),
               ),
-              child: Icon(icon, color: iconColor, size: 23),
+              child: Icon(icon, color: iconColor, size: 27),
             ),
-            const SizedBox(height: 3),
-            // Texte avec rendu forcé net (pas d'anti-aliasing flou)
+            const SizedBox(height: 4),
             Text(
               label,
-              textScaler: TextScaler.noScaling,
               style: TextStyle(
                 fontFamily: 'PlusJakartaSans',
                 package: null,
                 color: labelColor,
-                fontSize: 11.5,
+                fontSize: 14.0,
                 fontWeight:
-                    selected ? FontWeight.w700 : FontWeight.w500,
-                letterSpacing: 0.1,
-                height: 1.0,
-                // Forcer le rendu subpixel net
+                    selected ? FontWeight.w900 : FontWeight.w700,
+                letterSpacing: 0.2,
+                height: 1.1,
                 leadingDistribution: TextLeadingDistribution.even,
               ),
             ),
