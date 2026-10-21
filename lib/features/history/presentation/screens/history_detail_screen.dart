@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_gradients.dart';
 import '../../../../core/constants/app_icons.dart';
+import '../../../../core/widgets/ldf_pattern_background.dart';
 import '../../domain/entities/history_entry.dart';
 
 class HistoryDetailScreen extends StatelessWidget {
@@ -19,8 +20,9 @@ class HistoryDetailScreen extends StatelessWidget {
     final statusLabel = isDelivered ? 'Livré avec succès' : 'Échec de livraison';
     final statusIcon = isDelivered ? AppIcons.packageCheck : AppIcons.packageX;
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return LdfPatternBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
       body: Column(
         children: [
           // ── Header gradient vert ─────────────────────────────────────────
@@ -315,8 +317,9 @@ class HistoryDetailScreen extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _sectionLabel(String label) {
     return Text(

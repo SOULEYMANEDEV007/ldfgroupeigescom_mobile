@@ -8,6 +8,7 @@ import '../../../../core/di/injection.dart';
 import '../../../../core/network/token_manager.dart';
 import '../../../../core/utils/app_dialogs.dart';
 import '../../../../core/utils/app_feedback.dart';
+import '../../../../core/widgets/ldf_pattern_background.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -116,8 +117,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     final userName = getIt<TokenManager>().getUserName() ?? 'Livreur LDF';
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return LdfPatternBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -460,8 +462,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   // ── Helpers de construction de l'interface ─────────────────────────────────
 

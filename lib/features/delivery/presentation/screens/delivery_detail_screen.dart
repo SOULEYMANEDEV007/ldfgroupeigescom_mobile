@@ -15,6 +15,7 @@ import '../../../../core/utils/app_feedback.dart';
 import '../../../../core/services/location_service.dart';
 import '../../domain/entities/delivery.dart';
 import '../bloc/delivery_cubit.dart';
+import '../../../../core/widgets/ldf_pattern_background.dart';
 
 const _defaultLatLng = LatLng(5.3600, -4.0083); // Abidjan, Côte d'Ivoire
 
@@ -57,160 +58,163 @@ class _DeliveryDetailView extends StatelessWidget {
           );
         }
       },
-      child: Scaffold(
-        backgroundColor: AppColors.background,
-        body: Column(
-          children: [
-            _DeliveryHeader(delivery: delivery),
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // ── Timeline de suivi ────────────────────────────
-                    const SizedBox(height: 10),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: _sectionLabel('Suivi de la livraison'),
-                    ),
-                    const SizedBox(height: 10),
-                    _CompactTimeline(status: delivery.status),
-                    _MapSection(delivery: delivery),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _sectionLabel('Détails de la livraison'),
-                          const SizedBox(height: 10),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _KpiCard(
-                                  icon: AppIcons.clock,
-                                  iconColor: AppColors.accentBlue,
-                                  iconBgColor: AppColors.accentBlueSoft,
-                                  label:
-                                      delivery.status ==
-                                          DeliveryStatus.delivered
-                                      ? 'Heure de livraison'
-                                      : 'Heure prévue',
-                                  value: DateFormat(
-                                    'HH:mm',
-                                  ).format(delivery.scheduledTime),
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: _KpiCard(
-                                  icon: AppIcons.receipt,
-                                  iconColor: AppColors.primary,
-                                  iconBgColor: AppColors.primarySoft,
-                                  label: 'N° BL',
-                                  value: delivery.deliveryNoteNumber,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 10),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _KpiCard(
-                                  icon: AppIcons.scale,
-                                  iconColor: AppColors.warning,
-                                  iconBgColor: AppColors.warningSoft,
-                                  label: 'Volume/Poids',
-                                  value: '${delivery.weight} kg',
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: _KpiCard(
-                                  icon: AppIcons.wallet,
-                                  iconColor: AppColors.success,
-                                  iconBgColor: AppColors.successSoft,
-                                  label: 'Montant',
-                                  value: NumberFormat.currency(
-                                    locale: 'fr_FR',
-                                    symbol: 'FCFA',
-                                    decimalDigits: 0,
-                                  ).format(delivery.amount),
-                                ),
-                              ),
-                            ],
-                          ),
-
-                          if (delivery.notes.isNotEmpty) ...[
-                            const SizedBox(height: 16),
-                            _sectionLabel('Notes du client'),
-                            const SizedBox(height: 8),
-                            Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(14),
-                              decoration: BoxDecoration(
-                                color: Colors.amber.withAlpha(20),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: Colors.amber.withAlpha(80),
-                                ),
-                              ),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Icon(
-                                    AppIcons.note,
-                                    color: Colors.amber,
-                                    size: 18,
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Text(
-                                      delivery.notes,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodyMedium
-                                          ?.copyWith(height: 1.5),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                          const SizedBox(height: 16),
-                          SizedBox(
-                            width: double.infinity,
-                            child: OutlinedButton.icon(
-                              onPressed: () => context.push(
-                                '/delivery-note',
-                                extra: delivery,
-                              ),
-                              icon: const Icon(AppIcons.pdf, size: 18),
-                              label: const Text('Voir le Bon de Livraison'),
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: AppColors.primary,
-                                side: const BorderSide(
-                                  color: AppColors.primary,
-                                ),
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 14,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-                        ],
+      child: LdfPatternBackground(
+        child: Scaffold(
+          //backgroundColor: AppColors.background,
+          backgroundColor: Colors.transparent,
+          body: Column(
+            children: [
+              _DeliveryHeader(delivery: delivery),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // ── Timeline de suivi ────────────────────────────
+                      const SizedBox(height: 10),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: _sectionLabel('Suivi de la livraison'),
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 10),
+                      _CompactTimeline(status: delivery.status),
+                      _MapSection(delivery: delivery),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _sectionLabel('Détails de la livraison'),
+                            const SizedBox(height: 10),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _KpiCard(
+                                    icon: AppIcons.clock,
+                                    iconColor: AppColors.accentBlue,
+                                    iconBgColor: AppColors.accentBlueSoft,
+                                    label:
+                                        delivery.status ==
+                                            DeliveryStatus.delivered
+                                        ? 'Heure de livraison'
+                                        : 'Heure prévue',
+                                    value: DateFormat(
+                                      'HH:mm',
+                                    ).format(delivery.scheduledTime),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: _KpiCard(
+                                    icon: AppIcons.receipt,
+                                    iconColor: AppColors.primary,
+                                    iconBgColor: AppColors.primarySoft,
+                                    label: 'N° BL',
+                                    value: delivery.deliveryNoteNumber,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _KpiCard(
+                                    icon: AppIcons.scale,
+                                    iconColor: AppColors.warning,
+                                    iconBgColor: AppColors.warningSoft,
+                                    label: 'Volume/Poids',
+                                    value: '${delivery.weight} kg',
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: _KpiCard(
+                                    icon: AppIcons.wallet,
+                                    iconColor: AppColors.success,
+                                    iconBgColor: AppColors.successSoft,
+                                    label: 'Montant',
+                                    value: NumberFormat.currency(
+                                      locale: 'fr_FR',
+                                      symbol: 'FCFA',
+                                      decimalDigits: 0,
+                                    ).format(delivery.amount),
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            if (delivery.notes.isNotEmpty) ...[
+                              const SizedBox(height: 16),
+                              _sectionLabel('Notes du client'),
+                              const SizedBox(height: 8),
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(14),
+                                decoration: BoxDecoration(
+                                  color: Colors.amber.withAlpha(20),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: Colors.amber.withAlpha(80),
+                                  ),
+                                ),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Icon(
+                                      AppIcons.note,
+                                      color: Colors.amber,
+                                      size: 18,
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Text(
+                                        delivery.notes,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium
+                                            ?.copyWith(height: 1.5),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                            const SizedBox(height: 16),
+                            SizedBox(
+                              width: double.infinity,
+                              child: OutlinedButton.icon(
+                                onPressed: () => context.push(
+                                  '/delivery-note',
+                                  extra: delivery,
+                                ),
+                                icon: const Icon(AppIcons.pdf, size: 18),
+                                label: const Text('Voir le Bon de Livraison'),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: AppColors.primary,
+                                  side: const BorderSide(
+                                    color: AppColors.primary,
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 14,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-            _StickyActionBar(delivery: delivery),
-          ],
+              _StickyActionBar(delivery: delivery),
+            ],
+          ),
         ),
       ),
     );
@@ -285,7 +289,7 @@ class _DeliveryHeader extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              GestureDetector(
+              /*GestureDetector(
                 onTap: () {
                   // TODO: url_launcher tel:${delivery.phone}
                 },
@@ -301,7 +305,7 @@ class _DeliveryHeader extends StatelessWidget {
                     color: AppColors.primaryDark,
                   ),
                 ),
-              ),
+              ),*/
             ],
           ),
         ),
@@ -398,6 +402,8 @@ class _MapSectionState extends State<_MapSection> {
             children: [
               TileLayer(
                 urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                //urlTemplate:
+                //'https://basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png',
                 userAgentPackageName: 'com.ldf.igescom_mobile',
               ),
               MarkerLayer(

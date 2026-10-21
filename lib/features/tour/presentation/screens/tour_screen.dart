@@ -6,6 +6,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_gradients.dart';
 import '../../../../core/constants/app_icons.dart';
 import '../../../../core/di/injection.dart';
+import '../../../../core/widgets/ldf_pattern_background.dart';
 import '../../domain/entities/tour_entity.dart';
 import '../bloc/tour_cubit.dart';
 
@@ -26,8 +27,9 @@ class TourView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return LdfPatternBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -169,8 +171,9 @@ class TourView extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 }
 
 // ─── Card d'une tournée ───────────────────────────────────────────────────────

@@ -6,6 +6,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_icons.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/network/token_manager.dart';
+import '../../../../core/widgets/ldf_pattern_background.dart';
 import '../bloc/dashboard_cubit.dart';
 
 class DashboardScreen extends StatelessWidget {
@@ -25,8 +26,9 @@ class DashboardView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return LdfPatternBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
       // ── Pas de scroll — tout tient dans l'écran ────────────────────────
       body: BlocBuilder<DashboardCubit, DashboardState>(
         builder: (context, state) {
@@ -261,7 +263,7 @@ class DashboardView extends StatelessWidget {
                 Expanded(
                   child: Container(
                     decoration: const BoxDecoration(
-                      color: AppColors.background,
+                      color: Colors.transparent,
                       borderRadius: BorderRadius.vertical(
                         top: Radius.circular(24),
                       ),
@@ -397,8 +399,9 @@ class DashboardView extends StatelessWidget {
           return const SizedBox.shrink();
         },
       ),
-    );
-  }
+    ),
+  );
+}
 }
 
 // ─── StatCard ─────────────────────────────────────────────────────────────────

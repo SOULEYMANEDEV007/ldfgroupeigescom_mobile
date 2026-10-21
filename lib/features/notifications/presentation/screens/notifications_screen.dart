@@ -6,6 +6,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_gradients.dart';
 import '../../../../core/constants/app_icons.dart';
 import '../../../../core/utils/app_feedback.dart';
+import '../../../../core/widgets/ldf_pattern_background.dart';
 import '../../data/mock_notifications.dart';
 import '../../domain/models/notification_item.dart';
 
@@ -244,8 +245,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Widget build(BuildContext context) {
     final filteredList = _filteredNotifications;
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return LdfPatternBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
       body: Column(
         children: [
           // ── Header Vert LdF Dégradé ─────────────────────────────────────────
@@ -473,8 +475,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   // ── Carte Notification ─────────────────────────────────────────────────────
   Widget _buildNotificationCard(NotificationItem item) {

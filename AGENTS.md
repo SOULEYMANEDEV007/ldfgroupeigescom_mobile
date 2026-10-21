@@ -366,18 +366,63 @@ flutter run
 
 
 
-### Session du 20/10/2026 — Refonte Reprogrammation BL, 3 Badges de Statut & Consigne d'Exécution Stricte
-- **Directives Fermes du Développeur** :
+### Session du 20/10/2026 — Refonte Reprogrammation BL, Horodatage Réel & Ergonomie Popups
+- **Directives Fermes du Développeur & Posture** :
   1. **Interdiction formelle absolue** pour l'assistant d'exécuter des commandes terminal ou processus en arrière-plan sans accord préalable explicite.
-  2. Mode de travail : l'assistant guide pas à pas, le développeur applique lui-même les modifications.
+  2. Mode de travail : l'assistant guide pas à pas avec précision, le développeur applique lui-même les modifications.
   3. Remplacement sémantique et visuel de « l'échec de livraison » par **« Reprogrammation de livraison »** : un BL reprogrammé n'est pas clôturé, le livreur doit pouvoir revenir dessus et valider sa livraison à tout moment.
-- **Actions & Réalisations en cours** :
-  1. [tour_detail_screen.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/tour/presentation/screens/tour_detail_screen.dart) : Retrait du bouton d'action direct 'Valider' sur les cartes de BL au profit des 3 badges : « En attente », « Reprogrammé » (warning/ambre) et « Livré » (success/vert).
-  2. [delivery.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/delivery/domain/entities/delivery.dart) : Ajout du paramètre `DateTime? scheduledTime` dans `Delivery.copyWith`.
-  3. [delivery_model.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/delivery/data/models/delivery_model.dart) : Priorité accordée à `date_livraison` sur `date_livr` pour récupérer l'heure réelle de validation.
-  4. Diagnostic des boutons sur BL reprogrammé : débloquer la barre d'action `_StickyActionBar` dans [delivery_detail_screen.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/delivery/presentation/screens/delivery_detail_screen.dart) quand `delivery.status == DeliveryStatus.cancelled`.
+- **Réalisations Effectuées** :
+  1. **Badges de statut sur les tournées ([tour_detail_screen.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/tour/presentation/screens/tour_detail_screen.dart))** :
+     - Retrait du bouton d'action direct 'Valider' sur chaque carte de BL au profit des 3 badges : « En attente », « Reprogrammé » (warning/ambre) et « Livré » (success/vert).
+  2. **Suppression de l'écran rouge d'échec & Popup modal de reprogrammation ([delivery_detail_screen.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/delivery/presentation/screens/delivery_detail_screen.dart))** :
+     - Remplacement de `DeliveryFailureScreen` (plein écran rouge anxiogène) par un **popup modal sobre et moderne** `_showReprogramDialog` : saisie du motif de report directement sur place sans quitter la commande.
+     - Le bandeau supérieur dans le suivi affiche désormais « 🕒 Livraison reprogrammée » en ambre doux avec icône horloge au lieu de « Livraison annulée ».
+     - Rétablissement des boutons d'action du bas : le bouton vert « Valider la livraison » et le bouton ambre « Reprogrammer » restent accessibles si le BL est *En attente* ou *Reprogrammé*. Seuls les BL *Livrés* masquent les actions (consultation seule).
+  3. **Horodatage réel & Découverte Clé API** :
+     - Analyse de la réponse réelle de validation : le backend calcule lui-même et renvoie `date_livraison` (`2026-10-20T11:06:48.185648Z`) et passe automatiquement `tournee_terminee: true` et `statut_tournee: "TERMINEE"` quand le dernier BL est validé.
+     - [delivery_model.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/delivery/data/models/delivery_model.dart) : Priorité donnée à `date_livraison` sur `date_livr` (qui ne contenait que la date sans heure `00:00:00`).
+     - [delivery.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/delivery/domain/entities/delivery.dart) : Ajout du paramètre `DateTime? scheduledTime` dans `Delivery.copyWith`.
+     - Affichage de `--:--` pour les commandes non encore livrées au lieu du trompeur `00:00`.
+- **Validation** : Commits Git validés et exécutés par le développeur.
+
+### Session du 21/10/2026 — Décision Stratégique Cartographie & Migration Officielle Google Maps
+- **Contexte & Analyse Métier** :
+  1. **Constat sur OpenStreetMap (`flutter_map`)** : Les tuiles gratuites `tile.openstreetmap.org` souffrent de latences importantes sur réseau mobile, d'écrans gris intempestifs et d'un rendu visuel "dessin animé" des années 2000 non conforme à l'exigence d'une application professionnelle de transport/distribution.
+  2. **Vision Métier de la Géolocalisation** : La carte sert principalement à la **traçabilité du livreur** (prouver où il se trouve au moment de la livraison et remonter ses coordonnées GPS au backend lors de la validation du BL).
+  3. **Décision** : Migration officielle vers **Google Maps (`google_maps_flutter`)** pour un rendu vectoriel moderne, sombre/épuré, fluide et fiable, avec le point bleu GPS natif.
+- **Feuille de Route Validée pour l'Intégration Google Maps** :
+  1. [pubspec.yaml](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/pubspec.yaml) : Ajout de `google_maps_flutter: ^2.10.0` (suppression ultérieure de `flutter_map` et `latlong2`).
+  2. **Sécurité & AndroidManifest** :
+     - Déclaration de `MAPS_API_KEY` dans `android/local.properties` (hors Git).
+     - Injection dans [android/app/build.gradle.kts](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/android/app/build.gradle.kts) via `manifestPlaceholders["mapsApiKey"]`.
+     - Ajout de `<meta-data android:name="com.google.android.geo.API_KEY" android:value="${mapsApiKey}" />` dans [AndroidManifest.xml](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/android/app/src/main/AndroidManifest.xml).
+  3. [delivery_detail_screen.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/delivery/presentation/screens/delivery_detail_screen.dart) : Refonte de `_MapSection` avec `GoogleMap`, `GoogleMapController.animateCamera`, maintien du conteneur arrondi (120px, coins 16px, bandeau "Position actuelle activée") et repli sur Abidjan (`5.3600, -4.0083`).
+  4. [location_service.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/core/services/location_service.dart) : Conservation intégrale du service de géolocalisation basé sur `Geolocator` sans duplication.
+
+### Suite Session du 21/10/2026 — Motif de Marque LDF Groupe (`LdfPatternBackground`) & Déploiement Global
+- **Demande du Développeur** :
+  1. Éliminer l'effet fond blanc plat/froid sur l'ensemble de l'application au profit d'une identité visuelle propre à **Librairie de France Groupe**.
+  2. Créer un composant réutilisable global intégrant un dégradé subtil Vert-Jaune LDF et des symboles vectoriels en filigrane représentant les cœurs de métier du groupe (livres, cahiers scolaires, presse/journaux, maroquinerie, ordinateurs, stylos).
+  3. Assurer un rendu net, sans flou de tracé, avec des opacités équilibrées (16% vert LDF, 22% jaune doré LDF) et zéro impact sur la fluidité (mis en cache via `RepaintBoundary` et `IgnorePointer`).
+  4. Déployer ce motif d'arrière-plan sur l'ensemble des pages à fond blanc du projet.
+- **Réalisations Effectuées** :
+  1. **Création du composant signature [ldf_pattern_background.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/core/widgets/ldf_pattern_background.dart)** :
+     - Dégradé diagonal LDF : Vert pastel (`#E6F4EA`) ➔ Transition douce (`#F3F8EE`) ➔ Jaune doré pastel (`#FFF6D4`).
+     - Peintre vectoriel `_LdfBrandWatermarkPainter` traçant en quinconce et rotation (-12°) les icônes thématiques LDF avec alternance Vert (`AppColors.primary`, alpha 0.16) et Jaune Doré (`#C98A00`, alpha 0.22).
+  2. **Déploiement sur les 8 écrans à fond blanc** :
+     - [dashboard_screen.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/dashboard/presentation/screens/dashboard_screen.dart) (Tableau de bord / Accueil).
+     - [tour_screen.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/tour/presentation/screens/tour_screen.dart) (Mes Tournées).
+     - [profile_screen.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/profile/presentation/screens/profile_screen.dart) (Mon Profil).
+     - [tour_detail_screen.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/tour/presentation/screens/tour_detail_screen.dart) (Détail de Tournée).
+     - [history_screen.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/history/presentation/screens/history_screen.dart) (Historique des tournées).
+     - [history_detail_screen.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/history/presentation/screens/history_detail_screen.dart) (Détail Historique).
+     - [settings_screen.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/settings/presentation/screens/settings_screen.dart) (Paramètres).
+     - [notifications_screen.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/notifications/presentation/screens/notifications_screen.dart) (Notifications).
+     *(L'écran [delivery_detail_screen.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/delivery/presentation/screens/delivery_detail_screen.dart) avait été intégré préalablement).*
+- **Statut** : Harmonisation visuelle 100% terminée, identité de marque LDF Groupe affirmée et élégante.
 
 ---
+
 
 
 ## 7. 🌿 Informations Git

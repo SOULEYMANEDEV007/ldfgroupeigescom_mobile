@@ -9,6 +9,7 @@ import '../../../../core/di/injection.dart';
 import '../../../../core/network/token_manager.dart';
 import '../../../../core/utils/app_dialogs.dart';
 import '../../../../core/utils/app_feedback.dart';
+import '../../../../core/widgets/ldf_pattern_background.dart';
 import '../../domain/entities/user_profile.dart';
 import '../cubit/profile_cubit.dart';
 import '../cubit/profile_state.dart';
@@ -98,8 +99,9 @@ class _ProfileViewState extends State<_ProfileView> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return LdfPatternBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
       body: BlocConsumer<ProfileCubit, ProfileState>(
         listener: (context, state) {
           if (state is ProfileLoaded && state.successMessage != null) {
@@ -231,8 +233,9 @@ class _ProfileViewState extends State<_ProfileView> {
           );
         },
       ),
-    );
-  }
+    ),
+  );
+}
 
   // ── Carte Identité & Rôle ──────────────────────────────────────────────────
   Widget _buildIdentityCard(BuildContext context, UserProfile? profile) {

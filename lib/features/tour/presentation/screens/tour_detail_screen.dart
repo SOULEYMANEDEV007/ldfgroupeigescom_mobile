@@ -8,6 +8,7 @@ import '../../../../core/constants/app_icons.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/utils/app_dialogs.dart';
 import '../../../../core/utils/app_feedback.dart';
+import '../../../../core/widgets/ldf_pattern_background.dart';
 import '../../../dashboard/presentation/bloc/dashboard_cubit.dart';
 import '../../../delivery/domain/entities/delivery.dart';
 import '../../../delivery/presentation/bloc/delivery_cubit.dart';
@@ -99,8 +100,9 @@ class _TourDetailScreenState extends State<TourDetailScreen> {
             );
           }
         },
-        child: Scaffold(
-          backgroundColor: AppColors.background,
+        child: LdfPatternBackground(
+          child: Scaffold(
+            backgroundColor: Colors.transparent,
           body: Column(
             children: [
               // ── AppBar standardisée ─────────────────────────────────────────────
@@ -332,8 +334,9 @@ class _TourDetailScreenState extends State<TourDetailScreen> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 }
 
 class _DeliveryListCard extends StatelessWidget {
