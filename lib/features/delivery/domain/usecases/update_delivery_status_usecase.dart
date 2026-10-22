@@ -15,8 +15,15 @@ class UpdateDeliveryStatusUseCase {
     String id,
     DeliveryStatus status, {
     String? tourId,
+    String? codeBl,
     String? notes,
   }) {
-    return repository.updateStatus(id, status, tourId: tourId, notes: notes);
+    return repository.updateStatus(
+      id,
+      status,
+      tourId: tourId,
+      codeBl: codeBl,
+      notes: notes,
+    );
   }
 }

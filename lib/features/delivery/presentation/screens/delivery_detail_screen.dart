@@ -42,26 +42,36 @@ class _DeliveryDetailView extends StatelessWidget {
     return BlocListener<DeliveryCubit, DeliveryState>(
       listener: (context, state) {
         if (state is DeliveryUpdated) {
-          final isOffline =
-              getIt<TourLocalDataSource>().isPendingSync(state.delivery.id);
-          // Le retour à l'écran précédent se fait APRÈS fermeture du popup.
-          AppFeedback.success(
-            context,
-            isOffline
-                ? 'Livraison enregistrée en local (mode hors-ligne).\nElle sera synchronisée dès le retour du réseau.'
-                : 'Livraison confirmée avec succès',
-            title: isOffline
+          final isDelivered = state.delivery.status == DeliveryStatus.delivered;
+          final isOffline = getIt<TourLocalDataSource>().isPendingSync(
+            state.delivery.id,
+          );
+
+          final String title;
+          final String message;
+
+          if (isDelivered) {
+            title = isOffline
                 ? 'Enregistrée hors-ligne'
-                : 'Livraison confirmée',
-          ).then((_) {
-            if (context.mounted) context.pop(true);
+                : 'Livraison confirmée';
+            message = isOffline
+                ? 'Livraison enregistrée en local (mode hors-ligne).\nElle sera synchronisée dès le retour du réseau.'
+                : 'Livraison confirmée avec succès';
+          } else {
+            title = 'Livraison reportée';
+            message = 'Le report de la livraison a été enregistré avec succès.';
+          }
+
+          // Le retour à l'écran précédent se fait APRÈS fermeture du popup.
+          AppFeedback.success(context, message, title: title).then((_) {
+            if (context.mounted) context.pop(state.delivery);
           });
         }
         if (state is DeliveryError) {
           AppFeedback.error(
             context,
             state.message,
-            title: 'Validation impossible',
+            title: 'Opération impossible',
           );
         }
       },
@@ -84,7 +94,10 @@ class _DeliveryDetailView extends StatelessWidget {
                         child: _sectionLabel('Suivi de la livraison'),
                       ),
                       const SizedBox(height: 10),
-                      _CompactTimeline(status: delivery.status),
+                      _CompactTimeline(
+                        status: delivery.status,
+                        scheduledTime: delivery.scheduledTime,
+                      ),
                       _MapSection(delivery: delivery),
                       Padding(
                         padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
@@ -103,10 +116,13 @@ class _DeliveryDetailView extends StatelessWidget {
                                     label:
                                         delivery.status ==
                                             DeliveryStatus.delivered
-                                        ? 'Heure de livraison'
-                                        : 'Heure prévue',
+                                        ? 'Livré le'
+                                        : (delivery.status ==
+                                                DeliveryStatus.cancelled
+                                            ? 'Reprogrammé le'
+                                            : 'Date prévue'),
                                     value: DateFormat(
-                                      'HH:mm',
+                                      'dd/MM/yyyy · HH:mm',
                                     ).format(delivery.scheduledTime),
                                   ),
                                 ),
@@ -568,9 +584,7 @@ class _KpiCard extends StatelessWidget {
           const SizedBox(height: 3),
           Text(
             value,
-            style: Theme.of(
-              context,
-            ).textTheme.titleSmall?.copyWith(
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.w800,
               fontSize: 15.5,
             ),
@@ -698,6 +712,8 @@ class _StickyActionBar extends StatelessWidget {
           return const SizedBox.shrink();
         }
 
+        final canReprogram = delivery.status != DeliveryStatus.cancelled;
+
         return Container(
           padding: EdgeInsets.fromLTRB(
             16,
@@ -717,27 +733,32 @@ class _StickyActionBar extends StatelessWidget {
           ),
           child: Row(
             children: [
-              OutlinedButton.icon(
-                onPressed: isLoading
-                    ? null
-                    : () => _showReprogramDialog(context, delivery),
-                icon: const Icon(AppIcons.alertTriangle, size: 17),
-                label: const Text('Reprogrammer'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.warning,
-                  side: const BorderSide(color: AppColors.warning, width: 1.5),
-                  minimumSize: const Size(0, 54),
-                  padding: const EdgeInsets.symmetric(horizontal: 18),
-                  textStyle: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+              if (canReprogram) ...[
+                OutlinedButton.icon(
+                  onPressed: isLoading
+                      ? null
+                      : () => _showReprogramDialog(context, delivery),
+                  icon: const Icon(AppIcons.alertTriangle, size: 17),
+                  label: const Text('Reprogrammer'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.warning,
+                    side: const BorderSide(
+                      color: AppColors.warning,
+                      width: 1.5,
+                    ),
+                    minimumSize: const Size(0, 54),
+                    padding: const EdgeInsets.symmetric(horizontal: 18),
+                    textStyle: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 12),
+                const SizedBox(width: 12),
+              ],
               Expanded(
                 child: ElevatedButton.icon(
                   onPressed: isLoading
@@ -795,34 +816,15 @@ class _StickyActionBar extends StatelessWidget {
 // ─── Timeline de suivi de livraison ──────────────────────────────────────────
 class _CompactTimeline extends StatelessWidget {
   final DeliveryStatus status;
-  const _CompactTimeline({required this.status});
+  final DateTime? scheduledTime;
+  const _CompactTimeline({required this.status, this.scheduledTime});
 
   @override
   Widget build(BuildContext context) {
-    /*if (status == DeliveryStatus.cancelled) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        margin: const EdgeInsets.symmetric(horizontal: 16),
-        decoration: BoxDecoration(
-          color: AppColors.errorSoft,
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Row(
-          children: [
-            const Icon(AppIcons.cancelled, color: AppColors.error, size: 16),
-            const SizedBox(width: 8),
-            const Text(
-              'Livraison annulée',
-              style: TextStyle(
-                color: AppColors.error,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ],
-        ),
-      );
-    }*/
     if (status == DeliveryStatus.cancelled) {
+      final dateStr = scheduledTime != null
+          ? DateFormat('dd/MM/yyyy à HH:mm').format(scheduledTime!)
+          : null;
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -832,15 +834,19 @@ class _CompactTimeline extends StatelessWidget {
           border: Border.all(color: AppColors.warning.withAlpha(80)),
         ),
         child: Row(
-          children: const [
-            Icon(AppIcons.clock, color: AppColors.warning, size: 18),
-            SizedBox(width: 10),
-            Text(
-              'Livraison reprogrammée',
-              style: TextStyle(
-                color: AppColors.warning,
-                fontWeight: FontWeight.w700,
-                fontSize: 13,
+          children: [
+            const Icon(AppIcons.clock, color: AppColors.warning, size: 18),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                dateStr != null
+                    ? 'Livraison reprogrammée ($dateStr)'
+                    : 'Livraison reprogrammée',
+                style: const TextStyle(
+                  color: AppColors.warning,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
+                ),
               ),
             ),
           ],

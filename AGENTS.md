@@ -505,6 +505,43 @@ flutter run
   2. Harmonisation de la barre de progression sur la carte de tournée : jauge en `AppColors.accentBlue` durant la progression (< 100%), puis bascule en `AppColors.success` une fois la totalité des livraisons de la tournée achevée (100%).
 - **Statut** : Distinction visuelle immédiate et 100% conforme au standard logistique et à la charte LdF.
 
+### Suite Session du 22/10/2026 — Intégration de l'API de Report de Livraison & Suppression des Fallbacks Factices
+- **Demande du Développeur** :
+  1. Brancher l'API réelle de reprogrammation / report de livraison :
+     - `POST /api/flotte/tournees/${code_tournee}/lignes/${code_bl}/reporter-livraison/`
+     - Body : `{ "motif_report": motifReport }`
+  2. Supprimer les données factices / mockées de secours pour s'appuyer exclusivement sur les données réelles du backend API.
+- **Actions réalisées** :
+  1. [ApiEndpoints](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/core/network/api_endpoints.dart) : Ajout de la méthode `reportDelivery(String codeTournee, String codeBl)`.
+  2. [RealDeliveryRemoteDataSourceImpl](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/delivery/data/datasources/delivery_remote_data_source.dart) :
+     - Implémentation du `POST` réel vers `reportDelivery(cleanTournee, cleanBl)` avec `{ "motif_report": notes }`.
+     - Mise à jour du cache local (`TourLocalDataSource`) avec statut `REPORTEE` et le motif de report.
+     - Prise en charge du mode hors-ligne sans interruption de service.
+     - Remplacement des retours d'objets `DeliveryModel` vides/factices par `_getRealDelivery()` qui extrait la vraie livraison stockée dans le cache depuis les données de l'API backend (`convotournees`).
+  3. [DeliveryRepository](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/delivery/domain/repositories/delivery_repository.dart), [DeliveryRepositoryImpl](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/delivery/data/repositories_impl/delivery_repository_impl.dart) & [UpdateDeliveryStatusUseCase](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/delivery/domain/usecases/update_delivery_status_usecase.dart) : Propagation du paramètre `codeBl`.
+  4. [DeliveryCubit](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/delivery/presentation/bloc/delivery_cubit.dart) : Dans `reportFailure`, extraction automatique du `cleanBl` (sans préfixe `BL-`) et passage du motif.
+  5. [delivery_detail_screen.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/delivery/presentation/screens/delivery_detail_screen.dart) : Adaptation du toast de confirmation (titre *"Livraison reportée"* / message *"Le report de la livraison a été enregistré avec succès."*).
+### Session du 22/10/2026 — Traçabilité Complète des Dates (Tournée, Livraison, Report)
+- **Objectif du développeur** :
+  1. Afficher clairement la date de tournée sur le mobile comme sur le web (`date_tournee`).
+  2. Assurer la traçabilité complète du cycle de vie des livraisons (date prévue initiale, date & heure réelles de livraison, date & heure de report avec motif).
+  3. Aligner le design visuel des cartes de livraison sur le web (capsule de date sous le badge de statut).
+- **Actions réalisées** :
+  1. [tour_screen.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/tour/presentation/screens/tour_screen.dart) : Affichage sur chaque carte de tournée de la date au format français (`dd MMM yyyy`, ex: `22 oct. 2026`) avec icône calendrier, suivie de l'heure de départ (`heureDepart`), du véhicule et du chauffeur.
+  2. [tour_detail_screen.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/tour/presentation/screens/tour_detail_screen.dart) :
+     - En-tête : affichage de la date et de l'heure de la tournée.
+     - Cartes de livraison : ajout de la capsule de date sous le badge de statut (comme sur le Web IGESCOM).
+     - Ajout de l'encart ambré `Motif : [notes]` pour les livraisons reprogrammées.
+  3. [delivery_model.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/delivery/data/models/delivery_model.dart) :
+     - Priorisation intelligente de `date_livraison` (livré), `date_report` (reporté) et `date_livr` (prévue).
+  4. [tour_local_data_source.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/tour/data/datasources/tour_local_data_source.dart) & [delivery_remote_data_source.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/delivery/data/datasources/delivery_remote_data_source.dart) :
+     - Prise en charge de `eventDate` serveur pour horodater précisément `date_livraison` ou `date_report`.
+     - Séparation stricte de `date_report` (sans écraser `date_livraison`) lors des reports.
+  5. [delivery_detail_screen.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/delivery/presentation/screens/delivery_detail_screen.dart) :
+     - Carte KPI : affichage dynamique `Livré le`, `Reprogrammé le` ou `Date prévue` avec format `dd/MM/yyyy · HH:mm`.
+     - Timeline : affichage de la date/heure de reprogrammation dans le bandeau ambré.
+- **Statut** : Traçabilité temporelle 100% alignée avec le backend IGESCOM et l'interface Web.
+
 ---
 
 ## 7. 🌿 Informations Git

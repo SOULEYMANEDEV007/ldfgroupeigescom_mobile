@@ -8,6 +8,7 @@ abstract class DeliveryRepository {
     String id,
     DeliveryStatus status, {
     String? tourId,
+    String? codeBl,
     String? notes,
   });
 }

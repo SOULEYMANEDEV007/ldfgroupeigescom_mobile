@@ -15,6 +15,7 @@ abstract class DeliveryRemoteDataSource {
     String id,
     DeliveryStatus status, {
     String? tourId,
+    String? codeBl,
     String? notes,
   });
 }
@@ -35,9 +36,58 @@ class RealDeliveryRemoteDataSourceImpl implements DeliveryRemoteDataSource {
 
   @override
   Future<DeliveryModel> getDeliveryById(String id) async {
+    return _getRealDelivery(id);
+  }
+
+  /// Récupère la vraie livraison telle que renvoyée par l'API backend et enregistrée dans le cache
+  DeliveryModel _getRealDelivery(
+    String id, {
+    DeliveryStatus? status,
+    String? tourId,
+    String? notes,
+  }) {
+    final cleanId = id.trim();
+    final cachedRows = _localDataSource.getCachedTours();
+    if (cachedRows != null) {
+      for (final tour in cachedRows) {
+        if (tour is! Map) continue;
+        final currentTourId = tour['code_tournee']?.toString() ?? tourId ?? '';
+        final lignes = tour['lignes'] ?? tour['deliveries'];
+        if (lignes is! List) continue;
+
+        for (final item in lignes) {
+          if (item is! Map) continue;
+          final map = Map<String, dynamic>.from(item);
+          final ligneId =
+              map['code_ligne']?.toString() ?? map['code_bl']?.toString();
+
+          if (ligneId == cleanId || map['code_bl']?.toString() == cleanId) {
+            if (!map.containsKey('code_tournee') ||
+                map['code_tournee'] == null) {
+              map['code_tournee'] = currentTourId;
+            }
+            if (status != null) {
+              if (status == DeliveryStatus.delivered) {
+                map['statut_livraison'] = 'LIVREE';
+                map['date_livraison'] = DateTime.now().toIso8601String();
+              } else if (status == DeliveryStatus.cancelled) {
+                map['statut_livraison'] = 'REPORTEE';
+                map['date_report'] = DateTime.now().toIso8601String();
+                map['date_livraison'] = null;
+              }
+            }
+            if (notes != null && notes.isNotEmpty) {
+              map['observation_livraison'] = notes;
+            }
+            return DeliveryModel.fromJson(map);
+          }
+        }
+      }
+    }
+
     return DeliveryModel(
       id: id,
-      tourId: '',
+      tourId: tourId ?? '',
       clientCode: '',
       clientName: 'Client',
       deliveryNoteNumber: id.startsWith('BL-') ? id : 'BL-$id',
@@ -45,9 +95,9 @@ class RealDeliveryRemoteDataSourceImpl implements DeliveryRemoteDataSource {
       amount: 0.0,
       address: 'Abidjan',
       phone: '',
-      status: DeliveryStatus.inProgress,
+      status: status ?? DeliveryStatus.inProgress,
       scheduledTime: DateTime.now(),
-      notes: '',
+      notes: notes ?? '',
     );
   }
 
@@ -56,13 +106,16 @@ class RealDeliveryRemoteDataSourceImpl implements DeliveryRemoteDataSource {
     String id,
     DeliveryStatus status, {
     String? tourId,
+    String? codeBl,
     String? notes,
   }) async {
     // Si validation de livraison, envoi ou mise en file d'attente locale
     if (status == DeliveryStatus.delivered) {
       final cleanLigneId = id.trim();
       final cleanTournee =
-          (tourId != null && tourId.isNotEmpty && tourId != 'N/A') ? tourId : '';
+          (tourId != null && tourId.isNotEmpty && tourId != 'N/A')
+          ? tourId
+          : '';
       if (cleanLigneId.isEmpty || cleanLigneId == 'N/A') {
         throw const ApiException(
           'Ligne de livraison introuvable : impossible de valider cette livraison.',
@@ -70,16 +123,17 @@ class RealDeliveryRemoteDataSourceImpl implements DeliveryRemoteDataSource {
       }
 
       try {
-        await _dio.post(
+        final response = await _dio.post(
           ApiEndpoints.validateDelivery(cleanLigneId),
-          data: {
-            'observation_livraison': notes ?? '',
-            'tournee': cleanTournee,
-          },
-          options: Options(
-            extra: {'noSessionExpire': true},
-          ),
+          data: {'observation_livraison': notes ?? '', 'tournee': cleanTournee},
+          options: Options(extra: {'noSessionExpire': true}),
         );
+
+        final serverDate = (response.data is Map &&
+                response.data['data'] is Map &&
+                response.data['data']['date_livraison'] != null)
+            ? response.data['data']['date_livraison'].toString()
+            : null;
 
         // ✅ Succès en ligne : retrait de la file d'attente et mise à jour locale
         await _localDataSource.removePendingDelivery(cleanLigneId);
@@ -87,6 +141,7 @@ class RealDeliveryRemoteDataSourceImpl implements DeliveryRemoteDataSource {
           codeLigne: cleanLigneId,
           status: 'LIVREE',
           notes: notes,
+          eventDate: serverDate,
         );
       } on DioException catch (e) {
         if (_isNetworkOfflineError(e)) {
@@ -120,20 +175,77 @@ class RealDeliveryRemoteDataSourceImpl implements DeliveryRemoteDataSource {
       }
     }
 
-    return DeliveryModel(
-      id: id,
-      tourId: tourId ?? '',
-      clientCode: '',
-      clientName: '',
-      deliveryNoteNumber: id.startsWith('BL-') ? id : 'BL-$id',
-      weight: 0.0,
-      amount: 0.0,
-      address: '',
-      phone: '',
-      status: status,
-      scheduledTime: DateTime.now(),
-      notes: notes ?? '',
-    );
+    // ⚠️ Si report / reprogrammation de livraison
+    if (status == DeliveryStatus.cancelled) {
+      final cleanLigneId = id.trim();
+      final cleanTournee =
+          (tourId != null && tourId.isNotEmpty && tourId != 'N/A')
+          ? tourId
+          : '';
+      final cleanBl = (codeBl != null && codeBl.isNotEmpty)
+          ? codeBl
+          : cleanLigneId.replaceFirst('BL-', '').trim();
+
+      if (cleanTournee.isEmpty) {
+        throw const ApiException(
+          'Code tournée introuvable : impossible de reporter cette livraison.',
+        );
+      }
+      if (cleanBl.isEmpty) {
+        throw const ApiException(
+          'Numéro de BL introuvable : impossible de reporter cette livraison.',
+        );
+      }
+
+      try {
+        final response = await _dio.post(
+          ApiEndpoints.reportDelivery(
+            cleanTournee,
+            cleanLigneId,
+          ), // 👈 cleanLigneId au lieu de cleanBl
+          data: {
+            'tournee':
+                cleanTournee, // 👈 'tournee' comme pour valider-livraison
+            'code_tournee': cleanTournee, // Par sécurité
+            'motif_report': notes ?? '',
+          },
+          options: Options(extra: {'noSessionExpire': true}),
+        );
+
+        final serverReportDate = (response.data is Map &&
+                response.data['data'] is Map &&
+                response.data['data']['date_report'] != null)
+            ? response.data['data']['date_report'].toString()
+            : null;
+
+        // ✅ Succès en ligne : mise à jour du statut dans le cache local
+        await _localDataSource.updateCachedDeliveryStatus(
+          codeLigne: cleanLigneId,
+          status: 'REPORTEE',
+          notes: notes,
+          eventDate: serverReportDate,
+        );
+      } on DioException catch (e) {
+        if (_isNetworkOfflineError(e)) {
+          // 📦 Mode Hors-Ligne : mise à jour optimiste du cache local
+          await _localDataSource.updateCachedDeliveryStatus(
+            codeLigne: cleanLigneId,
+            status: 'REPORTEE',
+            notes: notes,
+          );
+        } else {
+          rethrow;
+        }
+      } catch (e) {
+        await _localDataSource.updateCachedDeliveryStatus(
+          codeLigne: cleanLigneId,
+          status: 'REPORTEE',
+          notes: notes,
+        );
+      }
+    }
+
+    return _getRealDelivery(id, status: status, tourId: tourId, notes: notes);
   }
 
   bool _isNetworkOfflineError(DioException e) {
@@ -179,6 +291,7 @@ class MockDeliveryRemoteDataSourceImpl implements DeliveryRemoteDataSource {
     String id,
     DeliveryStatus status, {
     String? tourId,
+    String? codeBl,
     String? notes,
   }) async {
     await Future.delayed(const Duration(milliseconds: 500));

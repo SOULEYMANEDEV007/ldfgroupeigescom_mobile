@@ -82,8 +82,9 @@ class _TourDetailScreenState extends State<TourDetailScreen> {
                 );
               }
             });
-            final isOffline =
-                getIt<TourLocalDataSource>().isPendingSync(updatedId);
+            final isOffline = getIt<TourLocalDataSource>().isPendingSync(
+              updatedId,
+            );
             AppFeedback.success(
               context,
               isOffline
@@ -110,218 +111,262 @@ class _TourDetailScreenState extends State<TourDetailScreen> {
         child: LdfPatternBackground(
           child: Scaffold(
             backgroundColor: Colors.transparent,
-          body: Column(
-            children: [
-              // ── AppBar standardisée ─────────────────────────────────────────────
-              Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [AppColors.primary, AppColors.primaryDark],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+            body: Column(
+              children: [
+                // ── AppBar standardisée ─────────────────────────────────────────────
+                Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [AppColors.primary, AppColors.primaryDark],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(28),
+                      bottomRight: Radius.circular(28),
+                    ),
                   ),
-                  borderRadius: BorderRadius.only(
-                    bottomLeft: Radius.circular(28),
-                    bottomRight: Radius.circular(28),
+                  child: SafeArea(
+                    bottom: false,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+                      // ↑ STANDARD : horizontal 16px
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Ligne 1 : Bouton retour + Titre
+                          Row(
+                            children: [
+                              IconButton(
+                                icon: const Icon(
+                                  AppIcons.back,
+                                  color: Colors.white,
+                                ),
+                                onPressed: () => context.pop(),
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(
+                                  minWidth: 40,
+                                  minHeight: 40,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  widget.tour.displayName,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w800,
+                                    height: 1.2,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          // Ligne 2 : Date · Heure · Référence
+                          Row(
+                            children: [
+                              const Icon(
+                                AppIcons.calendar,
+                                color: AppColors.navBarYellow,
+                                size: 14,
+                              ),
+                              const SizedBox(width: 5),
+                              Text(
+                                DateFormat('dd MMM yyyy', 'fr_FR')
+                                    .format(widget.tour.date),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              if (widget.tour.heureDepart.isNotEmpty) ...[
+                                Text(
+                                  ' · ',
+                                  style: TextStyle(
+                                    color: Colors.white.withValues(alpha: 0.6),
+                                    fontSize: 13,
+                                  ),
+                                ),
+                                const Icon(
+                                  AppIcons.clock,
+                                  color: Colors.white,
+                                  size: 13,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  widget.tour.heureDepart,
+                                  style: TextStyle(
+                                    color: Colors.white.withValues(alpha: 0.9),
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                              Text(
+                                ' · ',
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.6),
+                                  fontSize: 13,
+                                ),
+                              ),
+                              Text(
+                                widget.tour.reference,
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.85),
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          // Ligne 3 : Véhicule · Nombre de livraisons
+                          Row(
+                            children: [
+                              const Icon(
+                                AppIcons.car,
+                                color: AppColors.navBarYellow,
+                                size: 14,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                widget.tour.vehiclePlate,
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.9),
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              Text(
+                                ' · ',
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.6),
+                                  fontSize: 13,
+                                ),
+                              ),
+                              Text(
+                                '$totalDeliveries livraison${totalDeliveries > 1 ? 's' : ''}',
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.9),
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
-                child: SafeArea(
-                  bottom: false,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
-                    // ↑ STANDARD : horizontal 16px
+
+                // ── Carte de progression ────────────────────────────────────────────
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.border, width: 0.8),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.04),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Ligne 1 : Bouton retour + Titre
                         Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            IconButton(
-                              icon: const Icon(
-                                AppIcons.back,
-                                color: Colors.white,
-                              ),
-                              onPressed: () => context.pop(),
-                              padding: EdgeInsets.zero,
-                              constraints: const BoxConstraints(
-                                minWidth: 40,
-                                minHeight: 40,
+                            const Text(
+                              '📊 Progression',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.textPrimary,
                               ),
                             ),
-                            const SizedBox(width: 8),
-                            Expanded(
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 5,
+                              ),
+                              decoration: BoxDecoration(
+                                color: progress == 1.0
+                                    ? AppColors.successSoft
+                                    : AppColors.primarySoft,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                               child: Text(
-                                widget.tour.displayName,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 20,
+                                '$completedDeliveries/$totalDeliveries livrées',
+                                style: TextStyle(
+                                  fontSize: 13,
                                   fontWeight: FontWeight.w800,
-                                  height: 1.2,
+                                  color: progress == 1.0
+                                      ? AppColors.success
+                                      : AppColors.primary,
                                 ),
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 8),
-                        // Ligne 2 : Référence · Plaque · Nombre de livraisons
-                        Row(
-                          children: [
-                            Text(
-                              widget.tour.reference,
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.9),
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            Text(
-                              ' · ',
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.6),
-                                fontSize: 13,
-                              ),
-                            ),
-                            const Icon(
-                              AppIcons.car,
-                              color: AppColors.navBarYellow,
-                              size: 14,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              widget.tour.vehiclePlate,
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.9),
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            Text(
-                              ' · ',
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.6),
-                                fontSize: 13,
-                              ),
-                            ),
-                            Text(
-                              '$totalDeliveries livraison${totalDeliveries > 1 ? 's' : ''}',
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.9),
-                                fontSize: 13,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
+                        const SizedBox(height: 12),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: LinearProgressIndicator(
+                            value: progress,
+                            backgroundColor: AppColors.border,
+                            color: progress == 1.0
+                                ? AppColors.success
+                                : AppColors.primary,
+                            minHeight: 10,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          '${(progress * 100).toStringAsFixed(0)}% complété',
+                          style: const TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textSecondary,
+                          ),
                         ),
                       ],
                     ),
                   ),
                 ),
-              ),
 
-              // ── Carte de progression ────────────────────────────────────────────
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.border, width: 0.8),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.04),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            '📊 Progression',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 5,
-                            ),
-                            decoration: BoxDecoration(
-                              color: progress == 1.0
-                                  ? AppColors.successSoft
-                                  : AppColors.primarySoft,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              '$completedDeliveries/$totalDeliveries livrées',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w800,
-                                color: progress == 1.0
-                                    ? AppColors.success
-                                    : AppColors.primary,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: LinearProgressIndicator(
-                          value: progress,
-                          backgroundColor: AppColors.border,
-                          color: progress == 1.0
-                              ? AppColors.success
-                              : AppColors.primary,
-                          minHeight: 10,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        '${(progress * 100).toStringAsFixed(0)}% complété',
-                        style: const TextStyle(
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              // ── Liste des livraisons ────────────────────────────────────────────
-              Expanded(
-                child: ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-                  // ↑ STANDARD : padding 16px aligné avec l'AppBar
-                  itemCount: _deliveries.length,
-                  separatorBuilder: (context, index) =>
-                      const SizedBox(height: 12),
-                  // ↑ STANDARD : 12px entre les cartes
-                  itemBuilder: (context, index) {
-                    final delivery = _deliveries[index];
-                    return _DeliveryListCard(
-                      delivery: delivery,
-                      index: index + 1,
-                      total: totalDeliveries,
-                      isValidating: _validatingDeliveryId == delivery.id,
-                      onValidate: () => _handleValidateDelivery(delivery),
-                      onTap: () async {
-                        final result = await context.push(
-                          '/delivery-detail',
-                          extra: delivery,
-                        );
-                        if (result == true && mounted) {
+                // ── Liste des livraisons ────────────────────────────────────────────
+                Expanded(
+                  child: ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                    // ↑ STANDARD : padding 16px aligné avec l'AppBar
+                    itemCount: _deliveries.length,
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(height: 12),
+                    // ↑ STANDARD : 12px entre les cartes
+                    itemBuilder: (context, index) {
+                      final delivery = _deliveries[index];
+                      return _DeliveryListCard(
+                        delivery: delivery,
+                        index: index + 1,
+                        total: totalDeliveries,
+                        isValidating: _validatingDeliveryId == delivery.id,
+                        onValidate: () => _handleValidateDelivery(delivery),
+                        onTap: () async {
+                          final result = await context.push(
+                            '/delivery-detail',
+                            extra: delivery,
+                          );
+                          /*if (result == true && mounted) {
                           setState(() {
                             _deliveries[index] = delivery.copyWith(
                               status: DeliveryStatus.delivered,
@@ -331,19 +376,28 @@ class _TourDetailScreenState extends State<TourDetailScreen> {
                           try {
                             getIt<DashboardCubit>().fetchStats();
                           } catch (_) {}
-                        }
-                      },
-                    );
-                  },
+                        }*/
+                          if (result is Delivery && mounted) {
+                            setState(() {
+                              _deliveries[index] =
+                                  result; // Met à jour avec le vrai statut (Reprogrammé ou Livré)
+                            });
+                            try {
+                              getIt<DashboardCubit>().fetchStats();
+                            } catch (_) {}
+                          }
+                        },
+                      );
+                    },
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 }
 
 class _DeliveryListCard extends StatelessWidget {
@@ -488,13 +542,70 @@ class _DeliveryListCard extends StatelessWidget {
                           ),
                       ],
                     ),
+                    if (delivery.status == DeliveryStatus.cancelled &&
+                        delivery.notes.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.warningSoft,
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(
+                            color: AppColors.warning.withAlpha(80),
+                            width: 0.8,
+                          ),
+                        ),
+                        child: Text(
+                          'Motif : ${delivery.notes}',
+                          style: const TextStyle(
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.warning,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
 
               const SizedBox(width: 8),
 
-              _buildStatusBadge(delivery.status),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _buildStatusBadge(delivery.status),
+                  const SizedBox(height: 5),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.background,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: AppColors.border,
+                        width: 0.8,
+                      ),
+                    ),
+                    child: Text(
+                      DateFormat('dd/MM/yyyy').format(delivery.scheduledTime),
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
 
               // Bouton d'action direct (Valider / Livrée) comme sur le web
               /*if (isDelivered)
@@ -569,8 +680,9 @@ class _DeliveryListCard extends StatelessWidget {
   }
 
   Widget _buildStatusBadge(DeliveryStatus status) {
-    final isPendingSync =
-        getIt<TourLocalDataSource>().isPendingSync(delivery.id);
+    final isPendingSync = getIt<TourLocalDataSource>().isPendingSync(
+      delivery.id,
+    );
 
     final (
       Color color,
@@ -578,19 +690,20 @@ class _DeliveryListCard extends StatelessWidget {
       IconData icon,
       String label,
     ) = switch (status) {
-      DeliveryStatus.delivered => isPendingSync
-          ? (
-              AppColors.warning,
-              AppColors.warningSoft,
-              AppIcons.cloudOff,
-              'Livré (En attente sync)',
-            )
-          : (
-              AppColors.success,
-              AppColors.successSoft,
-              AppIcons.checkCircle,
-              'Livré',
-            ),
+      DeliveryStatus.delivered =>
+        isPendingSync
+            ? (
+                AppColors.warning,
+                AppColors.warningSoft,
+                AppIcons.cloudOff,
+                'Livré (En attente sync)',
+              )
+            : (
+                AppColors.success,
+                AppColors.successSoft,
+                AppIcons.checkCircle,
+                'Livré',
+              ),
       DeliveryStatus.cancelled => (
         AppColors.warning,
         AppColors.warningSoft,

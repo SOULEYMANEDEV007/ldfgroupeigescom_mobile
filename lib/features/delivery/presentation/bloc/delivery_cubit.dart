@@ -78,15 +78,18 @@ class DeliveryCubit extends Cubit<DeliveryState> {
     emit(DeliveryUpdating(delivery));
 
     try {
-      final combinedNotes = notes != null && notes.isNotEmpty
-          ? '[$reason] $notes'
-          : '[$reason]';
+      final cleanBl =
+          delivery.deliveryNoteNumber.replaceFirst('BL-', '').trim();
+      final motif = notes != null && notes.isNotEmpty
+          ? '$reason - $notes'
+          : reason;
 
       final result = await updateStatusUseCase(
         delivery.id,
         DeliveryStatus.cancelled,
         tourId: delivery.tourId,
-        notes: combinedNotes,
+        codeBl: cleanBl.isNotEmpty ? cleanBl : delivery.id,
+        notes: motif,
       );
 
       if (isClosed) return;

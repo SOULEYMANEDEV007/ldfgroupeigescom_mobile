@@ -29,7 +29,8 @@ class ApiEndpoints {
   /// Liste des tournées du convoyeur (lignes de livraison incluses).
   /// Méthode: GET — [codeAgent] provient de la réponse du login.
   /// ⚠️ Pas de slash final.
-  static String tours(String codeAgent) => '/api/flotte/convotournees/$codeAgent';
+  static String tours(String codeAgent) =>
+      '/api/flotte/convotournees/$codeAgent';
 
   /// Détail d'une tournée (même structure qu'un élément de [tours]).
   /// Méthode: GET — réponse dans `data`.
@@ -48,6 +49,10 @@ class ApiEndpoints {
   /// URL officielle backend : `/api/flotte/tournees/lignes/{code_ligne}/valider-livraison/`
   static String validateDelivery(String codeLigne) =>
       '/api/flotte/tournees/lignes/$codeLigne/valider-livraison/';
+
+  // Reprogrammation d'une livraision (BL)
+  static String reportDelivery(String codeTournee, String codeLigne) =>
+      '/api/flotte/tournees/lignes/$codeLigne/reporter-livraison/';
 
   // ===========================================================================
   // 👤 PROFIL & COMPTE AGENT

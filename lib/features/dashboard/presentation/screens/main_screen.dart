@@ -63,6 +63,7 @@ class _LdfNavBar extends StatelessWidget {
                     _NavItem(
                       icon: AppIcons.truck,
                       label: 'Tournées',
+
                       selected: currentIndex == 1,
                       onTap: () => context.go('/tour'),
                     ),
@@ -101,10 +102,12 @@ class _NavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Vert foncé LdF très net et contrasté sur le fond jaune
-    final iconColor =
-        selected ? AppColors.primaryDark : AppColors.primaryDark.withAlpha(195);
-    final labelColor =
-        selected ? AppColors.primaryDark : AppColors.primaryDark.withAlpha(195);
+    final iconColor = selected
+        ? AppColors.primaryDark
+        : AppColors.primaryDark.withAlpha(195);
+    final labelColor = selected
+        ? AppColors.primaryDark
+        : AppColors.primaryDark.withAlpha(195);
 
     return Expanded(
       child: GestureDetector(
@@ -134,8 +137,7 @@ class _NavItem extends StatelessWidget {
                 package: null,
                 color: labelColor,
                 fontSize: 14.0,
-                fontWeight:
-                    selected ? FontWeight.w900 : FontWeight.w700,
+                fontWeight: selected ? FontWeight.w900 : FontWeight.w700,
                 letterSpacing: 0.2,
                 height: 1.1,
                 leadingDistribution: TextLeadingDistribution.even,

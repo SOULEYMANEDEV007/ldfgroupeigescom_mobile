@@ -27,6 +27,7 @@ class DeliveryRepositoryImpl implements DeliveryRepository {
     String id,
     DeliveryStatus status, {
     String? tourId,
+    String? codeBl,
     String? notes,
   }) async {
     try {
@@ -34,6 +35,7 @@ class DeliveryRepositoryImpl implements DeliveryRepository {
         id,
         status,
         tourId: tourId,
+        codeBl: codeBl,
         notes: notes,
       );
       return Right(updated);

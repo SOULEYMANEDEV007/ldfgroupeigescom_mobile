@@ -44,6 +44,7 @@ abstract class TourLocalDataSource {
     required String codeLigne,
     required String status,
     String? notes,
+    String? eventDate,
   });
 }
 
@@ -156,6 +157,7 @@ class TourLocalDataSourceImpl implements TourLocalDataSource {
     required String codeLigne,
     required String status,
     String? notes,
+    String? eventDate,
   }) async {
     final raw = _prefs.getString(_cachedToursKey);
     if (raw == null || raw.isEmpty) return;
@@ -165,7 +167,7 @@ class TourLocalDataSourceImpl implements TourLocalDataSource {
       if (decoded is! List) return;
 
       bool modified = false;
-      final nowStr = DateTime.now().toIso8601String();
+      final nowStr = eventDate ?? DateTime.now().toIso8601String();
 
       for (final tour in decoded) {
         if (tour is! Map) continue;
@@ -179,7 +181,12 @@ class TourLocalDataSourceImpl implements TourLocalDataSource {
               ligne['id']?.toString();
           if (ligneId == codeLigne) {
             ligne['statut_livraison'] = status;
-            ligne['date_livraison'] = nowStr;
+            if (status == 'REPORTEE' || status == 'ECHEC') {
+              ligne['date_report'] = nowStr;
+              ligne['date_livraison'] = null;
+            } else if (status == 'LIVREE') {
+              ligne['date_livraison'] = nowStr;
+            }
             if (notes != null && notes.isNotEmpty) {
               ligne['observation_livraison'] = notes;
             }

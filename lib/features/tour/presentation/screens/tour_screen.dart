@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_gradients.dart';
@@ -339,31 +340,57 @@ class _TourCard extends StatelessWidget {
                         ],
                       ),
 
-                      // Métadonnées légères et compactes (Heure · Véhicule · Chauffeur)
-                      if (tour.heureDepart.isNotEmpty ||
-                          (tour.vehiclePlate.isNotEmpty &&
+                      // Date et Heure de la tournée (ex: 22 oct. 2026 · 09:00)
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          const Icon(
+                            AppIcons.calendar,
+                            size: 13,
+                            color: AppColors.primary,
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            DateFormat('dd MMM yyyy', 'fr_FR').format(tour.date),
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: AppColors.textPrimary,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          if (tour.heureDepart.isNotEmpty) ...[
+                            Text(
+                              ' · ',
+                              style: TextStyle(
+                                color: AppColors.textSecondary.withAlpha(120),
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const Icon(
+                              AppIcons.clock,
+                              size: 12,
+                              color: AppColors.textSecondary,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              tour.heureDepart,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: AppColors.textSecondary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+
+                      // Véhicule et Chauffeur
+                      if ((tour.vehiclePlate.isNotEmpty &&
                               tour.vehiclePlate != 'N/A') ||
                           tour.chauffeurName.isNotEmpty) ...[
                         const SizedBox(height: 5),
                         Row(
                           children: [
-                            if (tour.heureDepart.isNotEmpty) ...[
-                              const Icon(
-                                AppIcons.clock,
-                                size: 12,
-                                color: AppColors.textSecondary,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                tour.heureDepart,
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  color: AppColors.textSecondary,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                            ],
                             if (tour.vehiclePlate.isNotEmpty &&
                                 tour.vehiclePlate != 'N/A') ...[
                               const Icon(

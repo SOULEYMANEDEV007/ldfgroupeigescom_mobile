@@ -50,17 +50,35 @@ class DeliveryModel extends Delivery {
           .toUpperCase();
       final status = _statusFromApiString(statutLivraison);
 
-      // ── Date et heure réelles de livraison en priorité ──
+      // ── Traçabilité des dates selon le statut ──
       final rawDateLivraison = json['date_livraison']?.toString().trim();
-      final hasRealDate =
-          rawDateLivraison != null &&
+      final rawDateReport = json['date_report']?.toString().trim();
+      final rawDateLivr = livraison?['date_livr']?.toString().trim();
+
+      final hasDeliveryDate = rawDateLivraison != null &&
           rawDateLivraison.isNotEmpty &&
           rawDateLivraison != 'null';
+      final hasReportDate = rawDateReport != null &&
+          rawDateReport.isNotEmpty &&
+          rawDateReport != 'null';
+      final hasLivrDate = rawDateLivr != null &&
+          rawDateLivr.isNotEmpty &&
+          rawDateLivr != 'null';
 
-      final dateStr = hasRealDate
-          ? rawDateLivraison
-          : (livraison?['date_livr']?.toString() ??
-                json['created_at']?.toString());
+      final String? dateStr;
+      if (status == DeliveryStatus.delivered && hasDeliveryDate) {
+        dateStr = rawDateLivraison;
+      } else if (status == DeliveryStatus.cancelled && hasReportDate) {
+        dateStr = rawDateReport;
+      } else if (hasLivrDate) {
+        dateStr = rawDateLivr;
+      } else if (hasDeliveryDate) {
+        dateStr = rawDateLivraison;
+      } else if (hasReportDate) {
+        dateStr = rawDateReport;
+      } else {
+        dateStr = json['created_at']?.toString();
+      }
 
       final scheduledTime =
           (dateStr != null ? DateTime.tryParse(dateStr)?.toLocal() : null) ??
@@ -135,6 +153,8 @@ class DeliveryModel extends Delivery {
         return DeliveryStatus.inProgress;
       case 'ECHEC':
       case 'ANNULEE':
+      case 'REPORTEE':
+      case 'REPORTE':
         return DeliveryStatus.cancelled;
       case 'EN_ATTENTE':
       default:
