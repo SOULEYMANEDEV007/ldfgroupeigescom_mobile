@@ -38,6 +38,17 @@ abstract class TourLocalDataSource {
   /// Nombre de livraisons en attente de synchronisation
   int get pendingDeliveriesCount;
 
+  // ── Magasin persistant des signatures d'émargement client ──
+  /// Enregistre la signature d'une livraison dans le magasin permanent
+  Future<void> saveDeliverySignature({
+    required String codeLigne,
+    required String signedBy,
+    required String signatureData,
+  });
+
+  /// Récupère toutes les signatures enregistrées sur l'appareil (clé: codeLigne ou codeBl)
+  Map<String, Map<String, String>> getAllSavedSignatures();
+
   // ── Mise à jour optimiste du cache local des tournées ──
   /// Met à jour le statut d'une livraison directement dans le cache JSON
   Future<void> updateCachedDeliveryStatus({
@@ -56,13 +67,92 @@ class TourLocalDataSourceImpl implements TourLocalDataSource {
   static const String _lastSyncTimeKey = 'LDF_TOURS_LAST_SYNC_TIME';
   static const String _pendingDeliveryQueueKey =
       'LDF_PENDING_DELIVERY_SYNC_QUEUE';
+  static const String _savedSignaturesKey = 'LDF_SAVED_DELIVERY_SIGNATURES';
 
   final SharedPreferences _prefs;
 
   TourLocalDataSourceImpl(this._prefs);
 
   @override
+  Map<String, Map<String, String>> getAllSavedSignatures() {
+    final raw = _prefs.getString(_savedSignaturesKey);
+    if (raw == null || raw.isEmpty) return {};
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is Map<String, dynamic>) {
+        final result = <String, Map<String, String>>{};
+        decoded.forEach((key, val) {
+          if (val is Map) {
+            result[key] = {
+              'signed_by': val['signed_by']?.toString() ?? '',
+              'signature_data': val['signature_data']?.toString() ?? '',
+            };
+          }
+        });
+        return result;
+      }
+      return {};
+    } catch (_) {
+      return {};
+    }
+  }
+
+  @override
+  Future<void> saveDeliverySignature({
+    required String codeLigne,
+    required String signedBy,
+    required String signatureData,
+  }) async {
+    final signatures = getAllSavedSignatures();
+    signatures[codeLigne] = {
+      'signed_by': signedBy,
+      'signature_data': signatureData,
+    };
+    await _prefs.setString(_savedSignaturesKey, jsonEncode(signatures));
+  }
+
+  static String _cleanId(dynamic val) {
+    if (val == null) return '';
+    if (val is num) return val.toInt().toString();
+    final s = val.toString().trim();
+    if (s.endsWith('.0')) return s.substring(0, s.length - 2);
+    return s;
+  }
+
+  @override
   Future<void> cacheTours(List<dynamic> rows) async {
+    // 🛡️ Fusion automatique des signatures locales permanentes avant écriture dans le cache
+    final savedSignatures = getAllSavedSignatures();
+    if (savedSignatures.isNotEmpty) {
+      for (final tour in rows) {
+        if (tour is! Map) continue;
+        final lignes = tour['lignes'] ?? tour['deliveries'];
+        if (lignes is! List) continue;
+        for (final ligne in lignes) {
+          if (ligne is! Map) continue;
+          final rawLigneId = ligne['code_ligne'];
+          final rawBlId = ligne['code_bl'] ??
+              (ligne['livraison'] is Map ? ligne['livraison']['code_bl'] : null);
+          final ligneId = _cleanId(rawLigneId);
+          final blId = _cleanId(rawBlId);
+
+          final sig = savedSignatures[ligneId] ??
+              savedSignatures[blId] ??
+              savedSignatures['BL-$blId'] ??
+              savedSignatures[rawLigneId?.toString()];
+
+          if (sig != null) {
+            if (sig['signed_by']?.isNotEmpty ?? false) {
+              ligne['signed_by'] = sig['signed_by'];
+            }
+            if (sig['signature_data']?.isNotEmpty ?? false) {
+              ligne['signature_data'] = sig['signature_data'];
+            }
+          }
+        }
+      }
+    }
+
     final jsonStr = jsonEncode(rows);
     await _prefs.setString(_cachedToursKey, jsonStr);
     await _prefs.setString(_lastSyncTimeKey, DateTime.now().toIso8601String());
@@ -180,10 +270,18 @@ class TourLocalDataSourceImpl implements TourLocalDataSource {
 
         for (final ligne in lignes) {
           if (ligne is! Map) continue;
-          final ligneId = ligne['code_ligne']?.toString() ??
-              ligne['code_bl']?.toString() ??
-              ligne['id']?.toString();
-          if (ligneId == codeLigne) {
+          final rawLigneId = ligne['code_ligne'];
+          final rawBlId = ligne['code_bl'] ??
+              (ligne['livraison'] is Map ? ligne['livraison']['code_bl'] : null);
+          final ligneId = _cleanId(rawLigneId);
+          final blId = _cleanId(rawBlId);
+          final cleanTarget = _cleanId(codeLigne);
+          final isMatch = ligneId == cleanTarget ||
+              blId == cleanTarget ||
+              ligne['id']?.toString() == codeLigne ||
+              codeLigne == 'BL-$blId';
+
+          if (isMatch) {
             ligne['statut_livraison'] = status;
             if (status == 'REPORTEE' || status == 'ECHEC') {
               ligne['date_report'] = nowStr;
@@ -199,6 +297,32 @@ class TourLocalDataSourceImpl implements TourLocalDataSource {
             }
             if (signatureData != null && signatureData.isNotEmpty) {
               ligne['signature_data'] = signatureData;
+            }
+            if ((signedBy != null && signedBy.isNotEmpty) ||
+                (signatureData != null && signatureData.isNotEmpty)) {
+              final sigName = signedBy ?? '';
+              final sigData = signatureData ?? '';
+              if (ligneId.isNotEmpty) {
+                await saveDeliverySignature(
+                  codeLigne: ligneId,
+                  signedBy: sigName,
+                  signatureData: sigData,
+                );
+              }
+              if (blId.isNotEmpty && blId != ligneId) {
+                await saveDeliverySignature(
+                  codeLigne: blId,
+                  signedBy: sigName,
+                  signatureData: sigData,
+                );
+              }
+              if (codeLigne != ligneId && codeLigne != blId) {
+                await saveDeliverySignature(
+                  codeLigne: codeLigne,
+                  signedBy: sigName,
+                  signatureData: sigData,
+                );
+              }
             }
             modified = true;
           }

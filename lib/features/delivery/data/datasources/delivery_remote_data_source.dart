@@ -89,12 +89,26 @@ class RealDeliveryRemoteDataSourceImpl implements DeliveryRemoteDataSource {
             if (signatureData != null && signatureData.isNotEmpty) {
               map['signature_data'] = signatureData;
             }
+            // 🛡️ Récupération depuis le store persistant de signatures si absent
+            if (map['signed_by'] == null || map['signature_data'] == null) {
+              final sigs = _localDataSource.getAllSavedSignatures();
+              final saved = sigs[ligneId] ?? sigs[map['code_bl']?.toString()];
+              if (saved != null) {
+                if (saved['signed_by']?.isNotEmpty ?? false) {
+                  map['signed_by'] ??= saved['signed_by'];
+                }
+                if (saved['signature_data']?.isNotEmpty ?? false) {
+                  map['signature_data'] ??= saved['signature_data'];
+                }
+              }
+            }
             return DeliveryModel.fromJson(map);
           }
         }
       }
     }
 
+    final savedSig = _localDataSource.getAllSavedSignatures()[cleanId];
     return DeliveryModel(
       id: id,
       tourId: tourId ?? '',
@@ -108,8 +122,8 @@ class RealDeliveryRemoteDataSourceImpl implements DeliveryRemoteDataSource {
       status: status ?? DeliveryStatus.inProgress,
       scheduledTime: DateTime.now(),
       notes: notes ?? '',
-      signedBy: signedBy,
-      signatureData: signatureData,
+      signedBy: signedBy ?? savedSig?['signed_by'],
+      signatureData: signatureData ?? savedSig?['signature_data'],
     );
   }
 
