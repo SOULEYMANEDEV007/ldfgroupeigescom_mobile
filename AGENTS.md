@@ -561,14 +561,16 @@ flutter run
      - Modale de choix `_showValidationChoiceModal` proposant au livreur/présentateur les deux options : Option 1 (Validation directe) et Option 2 (Émargement tactile client avec badge Démo V2).
      - Raccourci tactile sous le bouton de consultation du BL.
   8. [tour_local_data_source.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/tour/data/datasources/tour_local_data_source.dart), [delivery_remote_data_source.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/delivery/data/datasources/delivery_remote_data_source.dart), [delivery_repository_impl.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/delivery/data/repositories_impl/delivery_repository_impl.dart) et [delivery_cubit.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/delivery/presentation/bloc/delivery_cubit.dart) : Persistance de `signed_by` et `signature_data` en ligne et hors-ligne dans le cache local.
-- **Statut** : Les 2 chantiers de la démo sont finalisés, propres, sans mock et prêts pour la présentation de lundi.
+  9. [delivery_note_screen.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/delivery/presentation/screens/delivery_note_screen.dart) : Remplacement de l'icône du camion par le logo officiel LDF Groupe (`assets/images/ldf_logo.png`) dans le bandeau vert.
+  10. [delivery_model.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/delivery/data/models/delivery_model.dart) & [tour_model.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/tour/data/models/tour_model.dart) : Harmonisation stricte des montants entre Détail (`delivery.amount`) et BL (`deliveryNote.totalAmount`) pour afficher exactement 15 FCFA sans doublon avec la retenue ARSI, et nettoyage du linter.
+- **Statut** : Les 2 chantiers de la démo sont finalisés, cohérents à 100%, sans mock et prêts pour la présentation de lundi.
 
 ---
 
 ## 7. 🌿 Informations Git
 
-- **Branche principale** : `main`.
-- **Statut** : Synchronisé avec `origin/main`.
+- **Branche principale** : `souley_dev`.
+- **Statut** : Prêt pour commit.
 
 
 

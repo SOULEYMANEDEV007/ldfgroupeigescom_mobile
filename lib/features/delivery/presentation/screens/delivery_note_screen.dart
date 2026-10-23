@@ -24,16 +24,22 @@ class _DeliveryNoteScreenState extends State<DeliveryNoteScreen> {
   void _zoomIn() {
     setState(() {
       _zoomScale = (_zoomScale + 0.15).clamp(0.8, 1.6);
-      _transformationController.value =
-          Matrix4.diagonal3Values(_zoomScale, _zoomScale, 1.0);
+      _transformationController.value = Matrix4.diagonal3Values(
+        _zoomScale,
+        _zoomScale,
+        1.0,
+      );
     });
   }
 
   void _zoomOut() {
     setState(() {
       _zoomScale = (_zoomScale - 0.15).clamp(0.8, 1.6);
-      _transformationController.value =
-          Matrix4.diagonal3Values(_zoomScale, _zoomScale, 1.0);
+      _transformationController.value = Matrix4.diagonal3Values(
+        _zoomScale,
+        _zoomScale,
+        1.0,
+      );
     });
   }
 
@@ -54,7 +60,9 @@ class _DeliveryNoteScreenState extends State<DeliveryNoteScreen> {
   Widget build(BuildContext context) {
     final delivery = widget.delivery;
     final blNumber =
-        delivery?.deliveryNote?.number ?? delivery?.deliveryNoteNumber ?? 'BL-2026-00452';
+        delivery?.deliveryNote?.number ??
+        delivery?.deliveryNoteNumber ??
+        'BL-2026-00452';
 
     return Scaffold(
       backgroundColor: const Color(0xFF1E293B), // Fond ardoise PDF viewer
@@ -141,10 +149,7 @@ class _DeliveryNoteScreenState extends State<DeliveryNoteScreen> {
                 child: Center(
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 580),
-                    child: _buildPaperDocument(
-                      context,
-                      delivery: delivery,
-                    ),
+                    child: _buildPaperDocument(context, delivery: delivery),
                   ),
                 ),
               ),
@@ -158,7 +163,10 @@ class _DeliveryNoteScreenState extends State<DeliveryNoteScreen> {
             right: 16,
             child: Center(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFF0F172A).withValues(alpha: 0.92),
                   borderRadius: BorderRadius.circular(30),
@@ -209,7 +217,10 @@ class _DeliveryNoteScreenState extends State<DeliveryNoteScreen> {
                       icon: const Icon(AppIcons.zoomOut, size: 18),
                       color: Colors.white,
                       padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                      constraints: const BoxConstraints(
+                        minWidth: 32,
+                        minHeight: 32,
+                      ),
                       tooltip: 'Dézoomer',
                       onPressed: _zoomOut,
                     ),
@@ -239,7 +250,10 @@ class _DeliveryNoteScreenState extends State<DeliveryNoteScreen> {
                       icon: const Icon(AppIcons.zoomIn, size: 18),
                       color: Colors.white,
                       padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                      constraints: const BoxConstraints(
+                        minWidth: 32,
+                        minHeight: 32,
+                      ),
                       tooltip: 'Zoomer',
                       onPressed: _zoomIn,
                     ),
@@ -257,7 +271,10 @@ class _DeliveryNoteScreenState extends State<DeliveryNoteScreen> {
                       icon: const Icon(AppIcons.maximize, size: 18),
                       color: Colors.white,
                       padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                      constraints: const BoxConstraints(
+                        minWidth: 32,
+                        minHeight: 32,
+                      ),
                       tooltip: 'Ajuster à l\'écran',
                       onPressed: _resetZoom,
                     ),
@@ -299,8 +316,8 @@ class _DeliveryNoteScreenState extends State<DeliveryNoteScreen> {
     final statusStr = delivery?.status == DeliveryStatus.delivered
         ? 'LIVRÉ'
         : (delivery?.status == DeliveryStatus.cancelled
-            ? 'REPORTÉ'
-            : 'EN ATTENTE');
+              ? 'REPORTÉ'
+              : 'EN ATTENTE');
     final signedBy = delivery?.signedBy ?? deliveryNote?.signedBy;
     final signatureData = delivery?.signatureData ?? deliveryNote?.signatureUrl;
 
@@ -339,15 +356,16 @@ class _DeliveryNoteScreenState extends State<DeliveryNoteScreen> {
                   child: Row(
                     children: [
                       Container(
-                        padding: const EdgeInsets.all(7),
+                        width: 38,
+                        height: 38,
+                        padding: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Icon(
-                          AppIcons.truck,
-                          color: AppColors.primaryDark,
-                          size: 22,
+                        child: Image.asset(
+                          'assets/images/ldf_logo.png',
+                          fit: BoxFit.contain,
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -594,10 +612,7 @@ class _DeliveryNoteScreenState extends State<DeliveryNoteScreen> {
                           ),
                           const SizedBox(width: 8),
                           Expanded(
-                            child: _buildMiniInfo(
-                              'VÉHICULE FLOTTE',
-                              vehicule,
-                            ),
+                            child: _buildMiniInfo('VÉHICULE FLOTTE', vehicule),
                           ),
                         ],
                       ),
@@ -612,10 +627,7 @@ class _DeliveryNoteScreenState extends State<DeliveryNoteScreen> {
                           ),
                           const SizedBox(width: 8),
                           Expanded(
-                            child: _buildMiniInfo(
-                              'STATUT DU BL',
-                              statusStr,
-                            ),
+                            child: _buildMiniInfo('STATUT DU BL', statusStr),
                           ),
                         ],
                       ),
@@ -920,19 +932,20 @@ class _DeliveryNoteScreenState extends State<DeliveryNoteScreen> {
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 const Spacer(),
-                                if (signatureData == null || signatureData.isEmpty)
+                                if (signatureData == null ||
+                                    signatureData.isEmpty)
                                   Center(
                                     child: Text(
-                                      delivery?.status == DeliveryStatus.delivered
+                                      delivery?.status ==
+                                              DeliveryStatus.delivered
                                           ? 'Validé directement\n(Visa numérique)'
                                           : 'En attente de réception\net signature client',
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
                                         fontSize: 7.5,
                                         fontStyle: FontStyle.italic,
-                                        color: AppColors.textSecondary.withValues(
-                                          alpha: 0.7,
-                                        ),
+                                        color: AppColors.textSecondary
+                                            .withValues(alpha: 0.7),
                                       ),
                                     ),
                                   ),
@@ -941,10 +954,15 @@ class _DeliveryNoteScreenState extends State<DeliveryNoteScreen> {
                             ),
 
                             // Signature manuscrite tracée en direct si disponible
-                            if (signatureData != null && signatureData.isNotEmpty)
+                            if (signatureData != null &&
+                                signatureData.isNotEmpty)
                               Positioned.fill(
                                 child: Padding(
-                                  padding: const EdgeInsets.only(top: 18, bottom: 4, right: 30),
+                                  padding: const EdgeInsets.only(
+                                    top: 18,
+                                    bottom: 4,
+                                    right: 30,
+                                  ),
                                   child: SignatureViewer(
                                     signatureData: signatureData,
                                     strokeColor: const Color(0xFF0F2F64),
@@ -973,7 +991,8 @@ class _DeliveryNoteScreenState extends State<DeliveryNoteScreen> {
                                       borderRadius: BorderRadius.circular(4),
                                     ),
                                     child: Text(
-                                      (signatureData != null && signatureData.isNotEmpty)
+                                      (signatureData != null &&
+                                              signatureData.isNotEmpty)
                                           ? 'ÉMARGÉ\nLDF DIGITAL'
                                           : 'CONFORME\nLDF LIVRAISON',
                                       textAlign: TextAlign.center,
@@ -1012,7 +1031,9 @@ class _DeliveryNoteScreenState extends State<DeliveryNoteScreen> {
                           children: List.generate(
                             28,
                             (index) => Container(
-                              width: (index % 3 == 0) ? 3 : (index % 2 == 0 ? 1 : 2),
+                              width: (index % 3 == 0)
+                                  ? 3
+                                  : (index % 2 == 0 ? 1 : 2),
                               color: Colors.black87,
                             ),
                           ),

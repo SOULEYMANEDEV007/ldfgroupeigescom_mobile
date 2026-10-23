@@ -60,13 +60,16 @@ class DeliveryModel extends Delivery {
       final rawDateReport = json['date_report']?.toString().trim();
       final rawDateLivr = livraison?['date_livr']?.toString().trim();
 
-      final hasDeliveryDate = rawDateLivraison != null &&
+      final hasDeliveryDate =
+          rawDateLivraison != null &&
           rawDateLivraison.isNotEmpty &&
           rawDateLivraison != 'null';
-      final hasReportDate = rawDateReport != null &&
+      final hasReportDate =
+          rawDateReport != null &&
           rawDateReport.isNotEmpty &&
           rawDateReport != 'null';
-      final hasLivrDate = rawDateLivr != null &&
+      final hasLivrDate =
+          rawDateLivr != null &&
           rawDateLivr.isNotEmpty &&
           rawDateLivr != 'null';
 
@@ -91,7 +94,23 @@ class DeliveryModel extends Delivery {
 
       final montArsi = (livraison?['mont_arsi_bl'] as num?)?.toDouble() ?? 0.0;
       final montTva = (livraison?['mont_tva_bl'] as num?)?.toDouble() ?? 0.0;
-      final amount = montArsi > 0 ? montArsi : montTva;
+      final taxes = montArsi + montTva;
+
+      // Recherche du montant total déclaré dans livraison ou commande
+      final rawTotal =
+          (livraison?['mont_ttc_bl'] ??
+                  livraison?['mont_bl'] ??
+                  livraison?['mont_ht_bl'] ??
+                  livraison?['montant'] ??
+                  commande?['mont_ttc_com'] ??
+                  commande?['mont_com'] ??
+                  commande?['montant'])
+              as num?;
+
+      // Montant total de référence (15 F si seule la taxe/ARSI est retournée)
+      final double totalReference = (rawTotal != null && rawTotal > 0)
+          ? rawTotal.toDouble()
+          : (taxes > 0 ? taxes : 0.0);
 
       final note = json['observation_livraison']?.toString().trim();
       final commentBl = livraison?['comment_bl']?.toString().trim();
@@ -108,63 +127,92 @@ class DeliveryModel extends Delivery {
           : '';
       final compteContrib = client?['compte_contrib']?.toString().trim() ?? '';
       final nomBonl = livraison?['nom_bonl']?.toString().trim() ?? '';
-      final codeAgce = livraison?['code_agce']?.toString().trim() ??
+      final codeAgce =
+          livraison?['code_agce']?.toString().trim() ??
           commande?['code_agce']?.toString().trim() ??
           (json['agence_tournee']?.toString().trim() ?? 'PLA');
 
-      final chauffeurOrLivreur = (json['chauffeur_name']?.toString().isNotEmpty ?? false)
+      final chauffeurOrLivreur =
+          (json['chauffeur_name']?.toString().isNotEmpty ?? false)
           ? json['chauffeur_name']!.toString()
           : (json['livreur_name']?.toString() ?? 'Équipe LDF');
-      final vehiclePlate =
-          json['vehicle_plate']?.toString() ?? 'Véhicule LDF';
+      final vehiclePlate = json['vehicle_plate']?.toString() ?? 'Véhicule LDF';
 
       // ── Génération des lignes de commande réelles (Articles du BL) ──
       final List<DeliveryLineItem> items = [];
       final String desig = nomBonl.isNotEmpty
           ? 'Marchandises Commande N° $codeComStr ($nomBonl)'
           : (codeComStr.isNotEmpty
-              ? 'Marchandises Commande N° $codeComStr'
-              : 'Marchandises Client ${clientName ?? "LDF"}');
+                ? 'Marchandises Commande N° $codeComStr'
+                : 'Marchandises Client ${clientName ?? "LDF"}');
 
-      items.add(DeliveryLineItem(
-        reference: codeComStr.isNotEmpty ? 'CMD-$codeComStr' : 'BL-$codeBlStr',
-        designation: desig,
-        quantity: 1,
-        unitPrice: amount > 0 ? amount : 0.0,
-        totalPrice: amount > 0 ? amount : 0.0,
-        unit: 'lot',
-      ));
-
-      if (montArsi > 0) {
-        items.add(DeliveryLineItem(
-          reference: 'TAX-ARSI',
-          designation: 'Retenue ARSI légale',
-          quantity: 1,
-          unitPrice: montArsi,
-          totalPrice: montArsi,
-          unit: 'taxe',
-        ));
-      }
-
-      if (montTva > 0) {
-        items.add(DeliveryLineItem(
-          reference: 'TAX-TVA',
-          designation: 'Taxe sur la Valeur Ajoutée (TVA)',
-          quantity: 1,
-          unitPrice: montTva,
-          totalPrice: montTva,
-          unit: 'taxe',
-        ));
+      // Si un montant global supérieur aux taxes existe, on déduit les taxes du prix marchandise
+      // Sinon (ex: 15 F total avec ARSI de 15 F), la ligne marchandise vaut le total sans doublon
+      if (totalReference > taxes && taxes > 0) {
+        final prixMarchandise = totalReference - taxes;
+        items.add(
+          DeliveryLineItem(
+            reference: codeComStr.isNotEmpty
+                ? 'CMD-$codeComStr'
+                : 'BL-$codeBlStr',
+            designation: desig,
+            quantity: 1,
+            unitPrice: prixMarchandise,
+            totalPrice: prixMarchandise,
+            unit: 'lot',
+          ),
+        );
+        if (montArsi > 0) {
+          items.add(
+            DeliveryLineItem(
+              reference: 'TAX-ARSI',
+              designation: 'Retenue ARSI légale',
+              quantity: 1,
+              unitPrice: montArsi,
+              totalPrice: montArsi,
+              unit: 'taxe',
+            ),
+          );
+        }
+        if (montTva > 0) {
+          items.add(
+            DeliveryLineItem(
+              reference: 'TAX-TVA',
+              designation: 'Taxe sur la Valeur Ajoutée (TVA)',
+              quantity: 1,
+              unitPrice: montTva,
+              totalPrice: montTva,
+              unit: 'taxe',
+            ),
+          );
+        }
+      } else {
+        // Cas forfaitaire / test : une seule ligne de marchandise avec mention ARSI si applicable
+        items.add(
+          DeliveryLineItem(
+            reference: codeComStr.isNotEmpty
+                ? 'CMD-$codeComStr'
+                : 'BL-$codeBlStr',
+            designation: montArsi > 0 ? '$desig (dont Retenue ARSI)' : desig,
+            quantity: 1,
+            unitPrice: totalReference,
+            totalPrice: totalReference,
+            unit: 'lot',
+          ),
+        );
       }
 
       final signedBy = json['signed_by']?.toString();
       final signatureData = json['signature_data']?.toString();
       final validatedAtStr = json['date_livraison']?.toString();
-      final validatedAt =
-          (validatedAtStr != null && validatedAtStr.isNotEmpty)
-              ? DateTime.tryParse(validatedAtStr)
-              : null;
+      final validatedAt = (validatedAtStr != null && validatedAtStr.isNotEmpty)
+          ? DateTime.tryParse(validatedAtStr)
+          : null;
 
+      final finalBlTotal = items.fold<double>(
+        0.0,
+        (sum, it) => sum + it.totalPrice,
+      );
       final deliveryNote = DeliveryNote(
         number: 'BL-$codeBlStr',
         generatedAt: scheduledTime,
@@ -178,14 +226,14 @@ class DeliveryModel extends Delivery {
         livreurName: chauffeurOrLivreur,
         vehiclePlate: vehiclePlate,
         items: items,
-        totalAmount: amount + montArsi + montTva,
+        totalAmount: finalBlTotal,
         totalWeight: 0.0,
         signatureUrl: signatureData,
         status: status == DeliveryStatus.delivered
             ? DeliveryNoteStatus.livre
             : (status == DeliveryStatus.cancelled
-                ? DeliveryNoteStatus.echec
-                : DeliveryNoteStatus.emis),
+                  ? DeliveryNoteStatus.echec
+                  : DeliveryNoteStatus.emis),
         orderNumber: codeComStr,
         compteContrib: compteContrib,
         montTva: montTva,
@@ -203,7 +251,7 @@ class DeliveryModel extends Delivery {
             : 'Client LDF',
         deliveryNoteNumber: 'BL-$codeBlStr',
         weight: 0.0,
-        amount: amount,
+        amount: finalBlTotal,
         address: fullAddress,
         phone: client?['tel1_clt']?.toString() ?? '',
         status: status,

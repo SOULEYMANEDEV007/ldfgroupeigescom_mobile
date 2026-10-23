@@ -18,7 +18,8 @@ class TourModel extends TourEntity {
 
   factory TourModel.fromJson(Map<String, dynamic> json) {
     // 1. Référence & ID & Libellé
-    final codeTournee = json['code_tournee']?.toString() ??
+    final codeTournee =
+        json['code_tournee']?.toString() ??
         json['reference']?.toString() ??
         json['id']?.toString() ??
         'TRN-N/A';
@@ -29,7 +30,8 @@ class TourModel extends TourEntity {
     final heureDepart = json['heure_depart']?.toString().trim() ?? '';
 
     // 2. Date
-    final dateStr = json['date_tournee']?.toString() ??
+    final dateStr =
+        json['date_tournee']?.toString() ??
         json['created_at']?.toString() ??
         json['date']?.toString();
     final date = DateTime.tryParse(dateStr ?? '') ?? DateTime.now();
@@ -43,7 +45,8 @@ class TourModel extends TourEntity {
         : null;
 
     final chauffeurName = chauffeur?['nom_complet']?.toString().trim() ?? '';
-    final livreurName = convoyeur?['nom_complet']?.toString() ??
+    final livreurName =
+        convoyeur?['nom_complet']?.toString() ??
         (chauffeurName.isNotEmpty
             ? chauffeurName
             : (json['livreurName']?.toString() ?? 'Livreur LDF'));
@@ -55,20 +58,24 @@ class TourModel extends TourEntity {
     final immat = vehicule?['immatriculation']?.toString().trim();
     final marque = vehicule?['marque']?.toString().trim();
     final modele = vehicule?['modele']?.toString().trim();
+    final nomVehicule = [
+      marque,
+      modele,
+    ].where((s) => s != null && s.isNotEmpty).join(' ');
     final vehiclePlate = (immat != null && immat.isNotEmpty)
-        ? ((marque != null && marque.isNotEmpty)
-            ? '$marque ${modele ?? ""}'.trim() + ' ($immat)'
-            : immat)
+        ? (nomVehicule.isNotEmpty ? '$nomVehicule ($immat)' : immat)
         : (json['code_vehicule']?.toString() ??
-            json['vehiclePlate']?.toString() ??
-            'N/A');
+              json['vehiclePlate']?.toString() ??
+              'N/A');
 
-    final statutStr = json['statut']?.toString().toUpperCase() ??
+    final statutStr =
+        json['statut']?.toString().toUpperCase() ??
         json['status']?.toString().toUpperCase();
     final status = _parseStatus(statutStr);
 
     // 5. Lignes de livraisons
-    final rawLignes = json['lignes'] as List<dynamic>? ??
+    final rawLignes =
+        json['lignes'] as List<dynamic>? ??
         json['deliveries'] as List<dynamic>? ??
         [];
 
@@ -122,15 +129,15 @@ class TourModel extends TourEntity {
   }
 
   Map<String, dynamic> toJson() => {
-        'code_tournee': reference,
-        'date_tournee': date.toIso8601String(),
-        'statut': _statusToString(status),
-        'code_vehicule': vehiclePlate,
-        'lignes': deliveries
-            .map((d) => (d is DeliveryModel) ? d.toJson() : null)
-            .whereType<Map<String, dynamic>>()
-            .toList(),
-      };
+    'code_tournee': reference,
+    'date_tournee': date.toIso8601String(),
+    'statut': _statusToString(status),
+    'code_vehicule': vehiclePlate,
+    'lignes': deliveries
+        .map((d) => (d is DeliveryModel) ? d.toJson() : null)
+        .whereType<Map<String, dynamic>>()
+        .toList(),
+  };
 
   static String _statusToString(TourStatus status) {
     switch (status) {
