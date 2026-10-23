@@ -17,6 +17,8 @@ abstract class DeliveryRemoteDataSource {
     String? tourId,
     String? codeBl,
     String? notes,
+    String? signedBy,
+    String? signatureData,
   });
 }
 
@@ -45,6 +47,8 @@ class RealDeliveryRemoteDataSourceImpl implements DeliveryRemoteDataSource {
     DeliveryStatus? status,
     String? tourId,
     String? notes,
+    String? signedBy,
+    String? signatureData,
   }) {
     final cleanId = id.trim();
     final cachedRows = _localDataSource.getCachedTours();
@@ -79,6 +83,12 @@ class RealDeliveryRemoteDataSourceImpl implements DeliveryRemoteDataSource {
             if (notes != null && notes.isNotEmpty) {
               map['observation_livraison'] = notes;
             }
+            if (signedBy != null && signedBy.isNotEmpty) {
+              map['signed_by'] = signedBy;
+            }
+            if (signatureData != null && signatureData.isNotEmpty) {
+              map['signature_data'] = signatureData;
+            }
             return DeliveryModel.fromJson(map);
           }
         }
@@ -98,6 +108,8 @@ class RealDeliveryRemoteDataSourceImpl implements DeliveryRemoteDataSource {
       status: status ?? DeliveryStatus.inProgress,
       scheduledTime: DateTime.now(),
       notes: notes ?? '',
+      signedBy: signedBy,
+      signatureData: signatureData,
     );
   }
 
@@ -108,6 +120,8 @@ class RealDeliveryRemoteDataSourceImpl implements DeliveryRemoteDataSource {
     String? tourId,
     String? codeBl,
     String? notes,
+    String? signedBy,
+    String? signatureData,
   }) async {
     // Si validation de livraison, envoi ou mise en file d'attente locale
     if (status == DeliveryStatus.delivered) {
@@ -125,7 +139,11 @@ class RealDeliveryRemoteDataSourceImpl implements DeliveryRemoteDataSource {
       try {
         final response = await _dio.post(
           ApiEndpoints.validateDelivery(cleanLigneId),
-          data: {'observation_livraison': notes ?? '', 'tournee': cleanTournee},
+          data: {
+            'observation_livraison': notes ?? '',
+            'tournee': cleanTournee,
+            if (signedBy != null && signedBy.isNotEmpty) 'signed_by': signedBy,
+          },
           options: Options(extra: {'noSessionExpire': true}),
         );
 
@@ -142,6 +160,8 @@ class RealDeliveryRemoteDataSourceImpl implements DeliveryRemoteDataSource {
           status: 'LIVREE',
           notes: notes,
           eventDate: serverDate,
+          signedBy: signedBy,
+          signatureData: signatureData,
         );
       } on DioException catch (e) {
         if (_isNetworkOfflineError(e)) {
@@ -155,6 +175,8 @@ class RealDeliveryRemoteDataSourceImpl implements DeliveryRemoteDataSource {
             codeLigne: cleanLigneId,
             status: 'LIVREE',
             notes: notes,
+            signedBy: signedBy,
+            signatureData: signatureData,
           );
         } else {
           // Vraie erreur applicative serveur (401, 403, 500...), on propage
@@ -171,6 +193,8 @@ class RealDeliveryRemoteDataSourceImpl implements DeliveryRemoteDataSource {
           codeLigne: cleanLigneId,
           status: 'LIVREE',
           notes: notes,
+          signedBy: signedBy,
+          signatureData: signatureData,
         );
       }
     }
@@ -245,7 +269,14 @@ class RealDeliveryRemoteDataSourceImpl implements DeliveryRemoteDataSource {
       }
     }
 
-    return _getRealDelivery(id, status: status, tourId: tourId, notes: notes);
+    return _getRealDelivery(
+      id,
+      status: status,
+      tourId: tourId,
+      notes: notes,
+      signedBy: signedBy,
+      signatureData: signatureData,
+    );
   }
 
   bool _isNetworkOfflineError(DioException e) {
@@ -293,6 +324,8 @@ class MockDeliveryRemoteDataSourceImpl implements DeliveryRemoteDataSource {
     String? tourId,
     String? codeBl,
     String? notes,
+    String? signedBy,
+    String? signatureData,
   }) async {
     await Future.delayed(const Duration(milliseconds: 500));
     final updated = DeliveryModel(
@@ -300,7 +333,7 @@ class MockDeliveryRemoteDataSourceImpl implements DeliveryRemoteDataSource {
       tourId: tourId ?? 'TRN-1790866899713',
       clientCode: 'CIETIA',
       clientName: 'CIE',
-      deliveryNoteNumber: id.startsWith('BL-') ? id : 'BL-$id',
+      deliveryNoteNumber: 'BL-$id',
       weight: 0.0,
       amount: 15.0,
       address: 'Abidjan',
@@ -308,6 +341,8 @@ class MockDeliveryRemoteDataSourceImpl implements DeliveryRemoteDataSource {
       status: status,
       scheduledTime: DateTime.now(),
       notes: notes ?? '',
+      signedBy: signedBy,
+      signatureData: signatureData,
     );
     _cache[id] = updated;
     return updated;

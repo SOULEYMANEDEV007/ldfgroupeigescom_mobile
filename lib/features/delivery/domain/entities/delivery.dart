@@ -22,6 +22,8 @@ class Delivery extends Equatable {
   final DateTime scheduledTime;
   final String notes;
   final DeliveryNote? deliveryNote;
+  final String? signedBy;
+  final String? signatureData;
 
   const Delivery({
     required this.id,
@@ -37,6 +39,8 @@ class Delivery extends Equatable {
     required this.scheduledTime,
     required this.notes,
     this.deliveryNote,
+    this.signedBy,
+    this.signatureData,
   });
 
   /// Retourne une copie de la livraison avec un nouveau statut.
@@ -44,6 +48,8 @@ class Delivery extends Equatable {
     DeliveryStatus? status,
     DeliveryNote? deliveryNote,
     DateTime? scheduledTime,
+    String? signedBy,
+    String? signatureData,
   }) {
     return Delivery(
       id: id,
@@ -59,6 +65,8 @@ class Delivery extends Equatable {
       scheduledTime: scheduledTime ?? this.scheduledTime,
       notes: notes,
       deliveryNote: deliveryNote ?? this.deliveryNote,
+      signedBy: signedBy ?? this.signedBy,
+      signatureData: signatureData ?? this.signatureData,
     );
   }
 
@@ -77,5 +85,7 @@ class Delivery extends Equatable {
     scheduledTime,
     notes,
     deliveryNote,
+    signedBy,
+    signatureData,
   ];
 }

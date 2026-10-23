@@ -1,4 +1,6 @@
 import '../../domain/entities/delivery.dart';
+import '../../domain/entities/delivery_line_item.dart';
+import '../../domain/entities/delivery_note.dart';
 
 /// Modèle de données pour la désérialisation JSON de l'API IGSCOM.
 class DeliveryModel extends Delivery {
@@ -15,6 +17,9 @@ class DeliveryModel extends Delivery {
     required super.status,
     required super.scheduledTime,
     required super.notes,
+    super.deliveryNote,
+    super.signedBy,
+    super.signatureData,
   });
 
   factory DeliveryModel.fromJson(Map<String, dynamic> json) {
@@ -94,6 +99,100 @@ class DeliveryModel extends Delivery {
           ? note
           : (commentBl ?? '');
 
+      // ── Données enrichies du BL ──
+      final rawCodeCom = livraison?['code_com'] ?? commande?['code_com'];
+      final codeComStr = rawCodeCom != null
+          ? (rawCodeCom is num
+                ? rawCodeCom.toInt().toString()
+                : rawCodeCom.toString())
+          : '';
+      final compteContrib = client?['compte_contrib']?.toString().trim() ?? '';
+      final nomBonl = livraison?['nom_bonl']?.toString().trim() ?? '';
+      final codeAgce = livraison?['code_agce']?.toString().trim() ??
+          commande?['code_agce']?.toString().trim() ??
+          (json['agence_tournee']?.toString().trim() ?? 'PLA');
+
+      final chauffeurOrLivreur = (json['chauffeur_name']?.toString().isNotEmpty ?? false)
+          ? json['chauffeur_name']!.toString()
+          : (json['livreur_name']?.toString() ?? 'Équipe LDF');
+      final vehiclePlate =
+          json['vehicle_plate']?.toString() ?? 'Véhicule LDF';
+
+      // ── Génération des lignes de commande réelles (Articles du BL) ──
+      final List<DeliveryLineItem> items = [];
+      final String desig = nomBonl.isNotEmpty
+          ? 'Marchandises Commande N° $codeComStr ($nomBonl)'
+          : (codeComStr.isNotEmpty
+              ? 'Marchandises Commande N° $codeComStr'
+              : 'Marchandises Client ${clientName ?? "LDF"}');
+
+      items.add(DeliveryLineItem(
+        reference: codeComStr.isNotEmpty ? 'CMD-$codeComStr' : 'BL-$codeBlStr',
+        designation: desig,
+        quantity: 1,
+        unitPrice: amount > 0 ? amount : 0.0,
+        totalPrice: amount > 0 ? amount : 0.0,
+        unit: 'lot',
+      ));
+
+      if (montArsi > 0) {
+        items.add(DeliveryLineItem(
+          reference: 'TAX-ARSI',
+          designation: 'Retenue ARSI légale',
+          quantity: 1,
+          unitPrice: montArsi,
+          totalPrice: montArsi,
+          unit: 'taxe',
+        ));
+      }
+
+      if (montTva > 0) {
+        items.add(DeliveryLineItem(
+          reference: 'TAX-TVA',
+          designation: 'Taxe sur la Valeur Ajoutée (TVA)',
+          quantity: 1,
+          unitPrice: montTva,
+          totalPrice: montTva,
+          unit: 'taxe',
+        ));
+      }
+
+      final signedBy = json['signed_by']?.toString();
+      final signatureData = json['signature_data']?.toString();
+      final validatedAtStr = json['date_livraison']?.toString();
+      final validatedAt =
+          (validatedAtStr != null && validatedAtStr.isNotEmpty)
+              ? DateTime.tryParse(validatedAtStr)
+              : null;
+
+      final deliveryNote = DeliveryNote(
+        number: 'BL-$codeBlStr',
+        generatedAt: scheduledTime,
+        validatedAt: validatedAt,
+        clientName: (clientName != null && clientName.isNotEmpty)
+            ? clientName
+            : 'Client LDF',
+        clientCode: client?['code_clt']?.toString() ?? 'N/A',
+        clientAddress: fullAddress,
+        agence: codeAgce,
+        livreurName: chauffeurOrLivreur,
+        vehiclePlate: vehiclePlate,
+        items: items,
+        totalAmount: amount + montArsi + montTva,
+        totalWeight: 0.0,
+        signatureUrl: signatureData,
+        status: status == DeliveryStatus.delivered
+            ? DeliveryNoteStatus.livre
+            : (status == DeliveryStatus.cancelled
+                ? DeliveryNoteStatus.echec
+                : DeliveryNoteStatus.emis),
+        orderNumber: codeComStr,
+        compteContrib: compteContrib,
+        montTva: montTva,
+        montArsi: montArsi,
+        signedBy: signedBy,
+      );
+
       return DeliveryModel(
         // L'id technique est le code_ligne (attendu par valider-livraison)
         id: json['code_ligne']?.toString() ?? codeBlStr,
@@ -110,6 +209,9 @@ class DeliveryModel extends Delivery {
         status: status,
         scheduledTime: scheduledTime,
         notes: finalNotes,
+        deliveryNote: deliveryNote,
+        signedBy: signedBy,
+        signatureData: signatureData,
       );
     }
 
@@ -127,6 +229,8 @@ class DeliveryModel extends Delivery {
       status: _statusFromString(json['status'] as String),
       scheduledTime: DateTime.parse(json['scheduled_time'] as String),
       notes: json['notes'] as String? ?? '',
+      signedBy: json['signed_by'] as String?,
+      signatureData: json['signature_data'] as String?,
     );
   }
 
@@ -143,6 +247,8 @@ class DeliveryModel extends Delivery {
     'status': _statusToString(status),
     'scheduled_time': scheduledTime.toIso8601String(),
     'notes': notes,
+    'signed_by': signedBy,
+    'signature_data': signatureData,
   };
 
   static DeliveryStatus _statusFromApiString(String? value) {

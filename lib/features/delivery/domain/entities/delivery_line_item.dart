@@ -7,6 +7,7 @@ class DeliveryLineItem extends Equatable {
   final int quantity;
   final double unitPrice;
   final double totalPrice;
+  final String unit;
 
   const DeliveryLineItem({
     required this.reference,
@@ -14,6 +15,7 @@ class DeliveryLineItem extends Equatable {
     required this.quantity,
     required this.unitPrice,
     required this.totalPrice,
+    this.unit = 'colis',
   });
 
   @override
@@ -23,5 +25,6 @@ class DeliveryLineItem extends Equatable {
     quantity,
     unitPrice,
     totalPrice,
+    unit,
   ];
 }

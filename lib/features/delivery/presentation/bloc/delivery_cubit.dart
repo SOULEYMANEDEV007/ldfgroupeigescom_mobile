@@ -42,6 +42,8 @@ class DeliveryCubit extends Cubit<DeliveryState> {
   Future<void> validateDelivery(
     Delivery delivery, {
     String? notes,
+    String? signedBy,
+    String? signatureData,
     String? signatureUrl,
     List<String>? photoUrls,
   }) async {
@@ -54,6 +56,8 @@ class DeliveryCubit extends Cubit<DeliveryState> {
         DeliveryStatus.delivered,
         tourId: delivery.tourId,
         notes: notes,
+        signedBy: signedBy,
+        signatureData: signatureData,
       );
 
       if (isClosed) return;

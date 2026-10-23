@@ -29,6 +29,8 @@ class DeliveryRepositoryImpl implements DeliveryRepository {
     String? tourId,
     String? codeBl,
     String? notes,
+    String? signedBy,
+    String? signatureData,
   }) async {
     try {
       final updated = await remoteDataSource.updateStatus(
@@ -37,6 +39,8 @@ class DeliveryRepositoryImpl implements DeliveryRepository {
         tourId: tourId,
         codeBl: codeBl,
         notes: notes,
+        signedBy: signedBy,
+        signatureData: signatureData,
       );
       return Right(updated);
     } catch (e) {

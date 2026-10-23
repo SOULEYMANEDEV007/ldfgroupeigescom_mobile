@@ -17,6 +17,7 @@ import '../../domain/entities/delivery.dart';
 import '../bloc/delivery_cubit.dart';
 import '../../../../core/widgets/ldf_pattern_background.dart';
 import '../../../tour/data/datasources/tour_local_data_source.dart';
+import '../widgets/signature_pad_dialog.dart';
 
 const _defaultLatLng = LatLng(5.3600, -4.0083); // Abidjan, Côte d'Ivoire
 
@@ -118,9 +119,9 @@ class _DeliveryDetailView extends StatelessWidget {
                                             DeliveryStatus.delivered
                                         ? 'Livré le'
                                         : (delivery.status ==
-                                                DeliveryStatus.cancelled
-                                            ? 'Reprogrammé le'
-                                            : 'Date prévue'),
+                                                  DeliveryStatus.cancelled
+                                              ? 'Reprogrammé le'
+                                              : 'Date prévue'),
                                     value: DateFormat(
                                       'dd/MM/yyyy · HH:mm',
                                     ).format(delivery.scheduledTime),
@@ -227,6 +228,32 @@ class _DeliveryDetailView extends StatelessWidget {
                                 ),
                               ),
                             ),
+                            if (delivery.status !=
+                                DeliveryStatus.delivered) ...[
+                              const SizedBox(height: 8),
+                              SizedBox(
+                                width: double.infinity,
+                                child: TextButton.icon(
+                                  onPressed: () => _showValidationChoiceModal(
+                                    context,
+                                    delivery,
+                                  ),
+                                  icon: const Icon(
+                                    AppIcons.edit,
+                                    size: 16,
+                                    color: AppColors.primary,
+                                  ),
+                                  label: const Text(
+                                    'Démarrer l\'émargement tactile ✍️ (Démo V2)',
+                                    style: TextStyle(
+                                      color: AppColors.primary,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 12.5,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
                             const SizedBox(height: 20),
                           ],
                         ),
@@ -693,6 +720,258 @@ Future<void> _showReprogramDialog(
   }
 }
 
+// ─── Modale de sélection du mode de validation (Direct vs Signature) ─────────
+Future<void> _showValidationChoiceModal(
+  BuildContext context,
+  Delivery delivery,
+) async {
+  final blClean = delivery.deliveryNoteNumber.replaceFirst('BL-', '').trim();
+
+  await showModalBottomSheet<void>(
+    context: context,
+    backgroundColor: Colors.white,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+    ),
+    builder: (modalCtx) {
+      return SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Poignée de glissement
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFCBD5E1),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.primarySoft,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      AppIcons.checkCircle,
+                      color: AppColors.primary,
+                      size: 22,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Validation — BL $blClean',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        const Text(
+                          'Choisissez le mode de validation pour cette course :',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+
+              // Option 1 : Validation directe (sans signature)
+              InkWell(
+                onTap: () async {
+                  Navigator.of(modalCtx).pop();
+                  final confirmed =
+                      await AppDialogs.showDeliveryConfirmationDialog(
+                        context,
+                        blNumber: blClean,
+                      );
+                  if (confirmed && context.mounted) {
+                    context.read<DeliveryCubit>().validateDelivery(delivery);
+                  }
+                },
+                borderRadius: BorderRadius.circular(14),
+                child: Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                        child: const Icon(
+                          AppIcons.check,
+                          color: AppColors.success,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: const [
+                            Text(
+                              'Option 1 : Validation directe',
+                              style: TextStyle(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            SizedBox(height: 2),
+                            Text(
+                              'Validation immédiate sans signature (visa automatique)',
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(
+                        AppIcons.arrowRight,
+                        size: 16,
+                        color: AppColors.textSecondary,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Option 2 : Émargement tactile client (Démo V2)
+              InkWell(
+                onTap: () async {
+                  Navigator.of(modalCtx).pop();
+                  final sigResult = await SignaturePadDialog.show(
+                    context,
+                    blNumber: 'BL-$blClean',
+                    initialClientName: delivery.clientName,
+                  );
+                  if (sigResult != null && context.mounted) {
+                    context.read<DeliveryCubit>().validateDelivery(
+                      delivery,
+                      signedBy: sigResult.signedBy,
+                      signatureData: sigResult.signatureData,
+                    );
+                  }
+                },
+                borderRadius: BorderRadius.circular(14),
+                child: Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: AppColors.primarySoft,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: AppColors.primary.withValues(alpha: 0.4),
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(
+                          AppIcons.edit,
+                          color: AppColors.primary,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Text(
+                                  'Option 2 : Faire signer le client',
+                                  style: TextStyle(
+                                    fontSize: 13.5,
+                                    fontWeight: FontWeight.w800,
+                                    color: AppColors.primaryDark,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 1.5,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primary,
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: const Text(
+                                    'DÉMO V2',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 8.5,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 2),
+                            const Text(
+                              'Émargement tactile au doigt/stylet intégré au PDF',
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                color: AppColors.primaryDark,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(
+                        AppIcons.arrowRight,
+                        size: 16,
+                        color: AppColors.primary,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+
 // ─── Barre d'actions sticky ───────────────────────────────────────────────────
 class _StickyActionBar extends StatelessWidget {
   final Delivery delivery;
@@ -704,10 +983,6 @@ class _StickyActionBar extends StatelessWidget {
       builder: (context, state) {
         final isLoading = state is DeliveryUpdating;
 
-        /*if (delivery.status == DeliveryStatus.delivered ||
-            delivery.status == DeliveryStatus.cancelled) {
-          return const SizedBox.shrink();
-        }*/
         if (delivery.status == DeliveryStatus.delivered) {
           return const SizedBox.shrink();
         }
@@ -747,7 +1022,7 @@ class _StickyActionBar extends StatelessWidget {
                       width: 1.5,
                     ),
                     minimumSize: const Size(0, 54),
-                    padding: const EdgeInsets.symmetric(horizontal: 18),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
                     textStyle: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 13,
@@ -763,21 +1038,7 @@ class _StickyActionBar extends StatelessWidget {
                 child: ElevatedButton.icon(
                   onPressed: isLoading
                       ? null
-                      : () async {
-                          final blNumber = delivery.deliveryNoteNumber
-                              .replaceFirst('BL-', '')
-                              .trim();
-                          final confirmed =
-                              await AppDialogs.showDeliveryConfirmationDialog(
-                                context,
-                                blNumber: blNumber,
-                              );
-                          if (confirmed && context.mounted) {
-                            context.read<DeliveryCubit>().validateDelivery(
-                              delivery,
-                            );
-                          }
-                        },
+                      : () => _showValidationChoiceModal(context, delivery),
                   icon: isLoading
                       ? const SizedBox(
                           width: 18,

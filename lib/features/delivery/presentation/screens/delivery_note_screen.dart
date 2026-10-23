@@ -6,6 +6,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_icons.dart';
 import '../../../../core/utils/app_feedback.dart';
 import '../../domain/entities/delivery.dart';
+import '../widgets/signature_pad_dialog.dart';
 
 class DeliveryNoteScreen extends StatefulWidget {
   final Delivery? delivery;
@@ -52,14 +53,8 @@ class _DeliveryNoteScreenState extends State<DeliveryNoteScreen> {
   @override
   Widget build(BuildContext context) {
     final delivery = widget.delivery;
-    final blNumber = delivery?.deliveryNoteNumber ?? 'BL-2026-00452';
-    final clientName = delivery?.clientName ?? 'SOCIÉTÉ ANONYME AFRIQUE';
-    final address = delivery?.address ?? 'Abidjan, Zone 4 - Rue des Brasseurs';
-    final phone = delivery?.phone ?? '+225 07 07 07 07 07';
-    final weight = delivery != null ? '${delivery.weight} kg' : '900 kg';
-    final dateStr = delivery != null
-        ? DateFormat('dd/MM/yyyy HH:mm').format(delivery.scheduledTime)
-        : DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now());
+    final blNumber =
+        delivery?.deliveryNote?.number ?? delivery?.deliveryNoteNumber ?? 'BL-2026-00452';
 
     return Scaffold(
       backgroundColor: const Color(0xFF1E293B), // Fond ardoise PDF viewer
@@ -148,12 +143,7 @@ class _DeliveryNoteScreenState extends State<DeliveryNoteScreen> {
                     constraints: const BoxConstraints(maxWidth: 580),
                     child: _buildPaperDocument(
                       context,
-                      blNumber: blNumber,
-                      clientName: clientName,
-                      address: address,
-                      phone: phone,
-                      weight: weight,
-                      dateStr: dateStr,
+                      delivery: delivery,
                     ),
                   ),
                 ),
@@ -284,13 +274,36 @@ class _DeliveryNoteScreenState extends State<DeliveryNoteScreen> {
   // ── Feuille de document papier A4 ──────────────────────────────────────────
   Widget _buildPaperDocument(
     BuildContext context, {
-    required String blNumber,
-    required String clientName,
-    required String address,
-    required String phone,
-    required String weight,
-    required String dateStr,
+    required Delivery? delivery,
   }) {
+    final deliveryNote = delivery?.deliveryNote;
+    final blNumber =
+        deliveryNote?.number ?? delivery?.deliveryNoteNumber ?? 'BL-2026-00452';
+    final clientName =
+        deliveryNote?.clientName ?? delivery?.clientName ?? 'Client LDF';
+    final address =
+        deliveryNote?.clientAddress ?? delivery?.address ?? 'Abidjan';
+    final phone = delivery?.phone ?? '';
+    final codeClt = deliveryNote?.clientCode ?? delivery?.clientCode ?? '';
+    final compteContrib = deliveryNote?.compteContrib ?? '';
+    final orderNumber = deliveryNote?.orderNumber ?? '';
+    final chauffeur = deliveryNote?.livreurName ?? 'ADMIN PLATEAU';
+    final vehicule =
+        deliveryNote?.vehiclePlate ?? 'Toyota Land Cruiser (ABJ-1010-CI)';
+    final agence = deliveryNote?.agence ?? 'Plateau';
+    final items = deliveryNote?.items ?? [];
+    final totalAmount = deliveryNote?.totalAmount ?? delivery?.amount ?? 0.0;
+    final dateStr = delivery != null
+        ? DateFormat('dd/MM/yyyy HH:mm').format(delivery.scheduledTime)
+        : DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now());
+    final statusStr = delivery?.status == DeliveryStatus.delivered
+        ? 'LIVRÉ'
+        : (delivery?.status == DeliveryStatus.cancelled
+            ? 'REPORTÉ'
+            : 'EN ATTENTE');
+    final signedBy = delivery?.signedBy ?? deliveryNote?.signedBy;
+    final signatureData = delivery?.signatureData ?? deliveryNote?.signatureUrl;
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -321,7 +334,7 @@ class _DeliveryNoteScreenState extends State<DeliveryNoteScreen> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Logo & Société (Flexible)
+                // Logo & Société
                 Expanded(
                   child: Row(
                     children: [
@@ -341,8 +354,8 @@ class _DeliveryNoteScreenState extends State<DeliveryNoteScreen> {
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          children: const [
-                            Text(
+                          children: [
+                            const Text(
                               'LdF GROUPE CI',
                               style: TextStyle(
                                 color: Colors.white,
@@ -354,8 +367,8 @@ class _DeliveryNoteScreenState extends State<DeliveryNoteScreen> {
                               overflow: TextOverflow.ellipsis,
                             ),
                             Text(
-                              'Logistique & Distribution',
-                              style: TextStyle(
+                              'Distribution — Agence ${agence.toUpperCase()}',
+                              style: const TextStyle(
                                 color: Colors.white70,
                                 fontSize: 10.5,
                                 fontWeight: FontWeight.w500,
@@ -363,7 +376,7 @@ class _DeliveryNoteScreenState extends State<DeliveryNoteScreen> {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
-                            Text(
+                            const Text(
                               'RCCM : CI-ABJ-2023-B-1452',
                               style: TextStyle(
                                 color: Colors.white60,
@@ -446,8 +459,8 @@ class _DeliveryNoteScreenState extends State<DeliveryNoteScreen> {
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
-                          children: const [
-                            Text(
+                          children: [
+                            const Text(
                               'EXPÉDITEUR',
                               style: TextStyle(
                                 color: AppColors.textSecondary,
@@ -456,8 +469,8 @@ class _DeliveryNoteScreenState extends State<DeliveryNoteScreen> {
                                 letterSpacing: 0.8,
                               ),
                             ),
-                            SizedBox(height: 3),
-                            Text(
+                            const SizedBox(height: 3),
+                            const Text(
                               'LDF Central Hub Abidjan',
                               style: TextStyle(
                                 color: AppColors.textPrimary,
@@ -466,13 +479,13 @@ class _DeliveryNoteScreenState extends State<DeliveryNoteScreen> {
                               ),
                             ),
                             Text(
-                              'Zone Industrielle Yopougon, Rue 12',
-                              style: TextStyle(
+                              'Agence ${agence.toUpperCase()} · Z.I Yopougon',
+                              style: const TextStyle(
                                 color: AppColors.textSecondary,
                                 fontSize: 9.5,
                               ),
                             ),
-                            Text(
+                            const Text(
                               '+225 27 20 00 00 00',
                               style: TextStyle(
                                 color: AppColors.textSecondary,
@@ -517,6 +530,27 @@ class _DeliveryNoteScreenState extends State<DeliveryNoteScreen> {
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
+                            if (codeClt.isNotEmpty && codeClt != 'N/A') ...[
+                              const SizedBox(height: 1),
+                              Text(
+                                'Code Client : $codeClt',
+                                style: const TextStyle(
+                                  color: AppColors.textSecondary,
+                                  fontSize: 9.5,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                            if (compteContrib.isNotEmpty) ...[
+                              const SizedBox(height: 1),
+                              Text(
+                                'Compte Contrib. : $compteContrib',
+                                style: const TextStyle(
+                                  color: AppColors.textSecondary,
+                                  fontSize: 9.5,
+                                ),
+                              ),
+                            ],
                             Text(
                               address,
                               style: const TextStyle(
@@ -524,13 +558,14 @@ class _DeliveryNoteScreenState extends State<DeliveryNoteScreen> {
                                 fontSize: 9.5,
                               ),
                             ),
-                            Text(
-                              'Tél : $phone',
-                              style: const TextStyle(
-                                color: AppColors.textSecondary,
-                                fontSize: 9.5,
+                            if (phone.isNotEmpty)
+                              Text(
+                                'Tél : $phone',
+                                style: const TextStyle(
+                                  color: AppColors.textSecondary,
+                                  fontSize: 9.5,
+                                ),
                               ),
-                            ),
                           ],
                         ),
                       ),
@@ -553,15 +588,15 @@ class _DeliveryNoteScreenState extends State<DeliveryNoteScreen> {
                         children: [
                           Expanded(
                             child: _buildMiniInfo(
-                              'CHAUFFEUR',
-                              'Livreur LDF (Mat: LDF-023)',
+                              'CHAUFFEUR / LIVREUR',
+                              chauffeur,
                             ),
                           ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: _buildMiniInfo(
-                              'VÉHICULE',
-                              'Fourgonnette #04',
+                              'VÉHICULE FLOTTE',
+                              vehicule,
                             ),
                           ),
                         ],
@@ -571,15 +606,15 @@ class _DeliveryNoteScreenState extends State<DeliveryNoteScreen> {
                         children: [
                           Expanded(
                             child: _buildMiniInfo(
-                              'CRÉNEAU',
-                              '08:00 - 12:00',
+                              'COMMANDE N°',
+                              orderNumber.isNotEmpty ? orderNumber : 'N/A',
                             ),
                           ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: _buildMiniInfo(
-                              'STATUT BL',
-                              'VALIDÉ',
+                              'STATUT DU BL',
+                              statusStr,
                             ),
                           ),
                         ],
@@ -618,7 +653,7 @@ class _DeliveryNoteScreenState extends State<DeliveryNoteScreen> {
                   child: Row(
                     children: const [
                       SizedBox(
-                        width: 20,
+                        width: 22,
                         child: Text(
                           'N°',
                           style: TextStyle(
@@ -642,7 +677,7 @@ class _DeliveryNoteScreenState extends State<DeliveryNoteScreen> {
                       Expanded(
                         flex: 2,
                         child: Text(
-                          'Qté',
+                          'Condit.',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontSize: 9.5,
@@ -652,9 +687,9 @@ class _DeliveryNoteScreenState extends State<DeliveryNoteScreen> {
                         ),
                       ),
                       Expanded(
-                        flex: 2,
+                        flex: 3,
                         child: Text(
-                          'Poids',
+                          'Montant TTC',
                           textAlign: TextAlign.right,
                           style: TextStyle(
                             fontSize: 9.5,
@@ -665,7 +700,7 @@ class _DeliveryNoteScreenState extends State<DeliveryNoteScreen> {
                       ),
                       SizedBox(width: 6),
                       SizedBox(
-                        width: 48,
+                        width: 44,
                         child: Text(
                           'Contrôle',
                           textAlign: TextAlign.center,
@@ -680,28 +715,37 @@ class _DeliveryNoteScreenState extends State<DeliveryNoteScreen> {
                   ),
                 ),
 
-                // Lignes d'articles
-                _buildTableRow(
-                  '1',
-                  'Carton Marchandises Réf. LDF-A400',
-                  '2 colis',
-                  '250 kg',
-                  isEven: false,
-                ),
-                _buildTableRow(
-                  '2',
-                  'Palette de Matériaux B',
-                  '1 palette',
-                  '500 kg',
-                  isEven: true,
-                ),
-                _buildTableRow(
-                  '3',
-                  'Colis Fournitures C',
-                  '3 paquets',
-                  '150 kg',
-                  isEven: false,
-                ),
+                // Lignes d'articles réelles
+                if (items.isNotEmpty)
+                  Column(
+                    children: List.generate(items.length, (index) {
+                      final item = items[index];
+                      final isTax = item.reference.startsWith('TAX');
+                      final amountFormatted = item.totalPrice > 0
+                          ? '${NumberFormat('#,##0', 'fr_FR').format(item.totalPrice)} F'
+                          : '0 F';
+                      return _buildTableRow(
+                        (index + 1).toString(),
+                        item.designation,
+                        '${item.quantity} ${item.unit}',
+                        amountFormatted,
+                        isEven: index.isOdd,
+                        isTax: isTax,
+                      );
+                    }),
+                  )
+                else
+                  _buildTableRow(
+                    '1',
+                    orderNumber.isNotEmpty
+                        ? 'Marchandises Commande N° $orderNumber'
+                        : 'Marchandises $clientName',
+                    '1 lot',
+                    totalAmount > 0
+                        ? '${NumberFormat('#,##0', 'fr_FR').format(totalAmount)} F'
+                        : '0 F',
+                    isEven: false,
+                  ),
 
                 // ── Totaux du BL (Adaptatif) ─────────────────────────────────
                 Container(
@@ -721,17 +765,17 @@ class _DeliveryNoteScreenState extends State<DeliveryNoteScreen> {
                     children: [
                       Expanded(
                         child: Row(
-                          children: const [
-                            Icon(
+                          children: [
+                            const Icon(
                               AppIcons.packageCheck,
                               size: 14,
                               color: AppColors.primary,
                             ),
-                            SizedBox(width: 5),
+                            const SizedBox(width: 5),
                             Expanded(
                               child: Text(
-                                'TOTAL : 3 lig. / 6 unit.',
-                                style: TextStyle(
+                                'TOTAL : ${items.isNotEmpty ? items.length : 1} ligne(s)',
+                                style: const TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.w700,
                                   color: AppColors.textPrimary,
@@ -743,7 +787,7 @@ class _DeliveryNoteScreenState extends State<DeliveryNoteScreen> {
                         ),
                       ),
                       Text(
-                        'POIDS TOTAL : $weight',
+                        'TOTAL BL : ${NumberFormat('#,##0', 'fr_FR').format(totalAmount)} FCFA',
                         style: const TextStyle(
                           fontSize: 10.5,
                           fontWeight: FontWeight.w800,
@@ -797,7 +841,7 @@ class _DeliveryNoteScreenState extends State<DeliveryNoteScreen> {
                     // Signature Livreur
                     Expanded(
                       child: Container(
-                        height: 90,
+                        height: 95,
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
                           border: Border.all(
@@ -820,7 +864,7 @@ class _DeliveryNoteScreenState extends State<DeliveryNoteScreen> {
                             const Spacer(),
                             Center(
                               child: Text(
-                                'Signé numériquement\nLdF Mobile ID: #023',
+                                'Signé numériquement\n$chauffeur',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   fontSize: 8,
@@ -841,7 +885,7 @@ class _DeliveryNoteScreenState extends State<DeliveryNoteScreen> {
                     // Signature & Cachet Client
                     Expanded(
                       child: Container(
-                        height: 90,
+                        height: 95,
                         padding: const EdgeInsets.all(6),
                         decoration: BoxDecoration(
                           border: Border.all(
@@ -854,8 +898,8 @@ class _DeliveryNoteScreenState extends State<DeliveryNoteScreen> {
                           children: [
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
-                              children: const [
-                                Text(
+                              children: [
+                                const Text(
                                   'CACHET & SIGNATURE CLIENT',
                                   style: TextStyle(
                                     fontSize: 8,
@@ -863,51 +907,86 @@ class _DeliveryNoteScreenState extends State<DeliveryNoteScreen> {
                                     color: AppColors.textSecondary,
                                   ),
                                 ),
-                                Spacer(),
-                                Center(
-                                  child: Text(
-                                    'Nom du réceptionnaire :',
-                                    style: TextStyle(
-                                      fontSize: 8,
-                                      color: AppColors.textSecondary,
+                                const SizedBox(height: 2),
+                                if (signedBy != null && signedBy.isNotEmpty)
+                                  Text(
+                                    'Réceptionnaire : $signedBy',
+                                    style: const TextStyle(
+                                      fontSize: 7.5,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.textPrimary,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                const Spacer(),
+                                if (signatureData == null || signatureData.isEmpty)
+                                  Center(
+                                    child: Text(
+                                      delivery?.status == DeliveryStatus.delivered
+                                          ? 'Validé directement\n(Visa numérique)'
+                                          : 'En attente de réception\net signature client',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize: 7.5,
+                                        fontStyle: FontStyle.italic,
+                                        color: AppColors.textSecondary.withValues(
+                                          alpha: 0.7,
+                                        ),
+                                      ),
                                     ),
                                   ),
-                                ),
-                                Spacer(),
+                                const Spacer(),
                               ],
                             ),
 
-                            // Tampon officiel vert en filigrane
-                            Positioned(
-                              right: 0,
-                              bottom: 0,
-                              child: Transform.rotate(
-                                angle: -0.15,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 5,
-                                    vertical: 2,
+                            // Signature manuscrite tracée en direct si disponible
+                            if (signatureData != null && signatureData.isNotEmpty)
+                              Positioned.fill(
+                                child: Padding(
+                                  padding: const EdgeInsets.only(top: 18, bottom: 4, right: 30),
+                                  child: SignatureViewer(
+                                    signatureData: signatureData,
+                                    strokeColor: const Color(0xFF0F2F64),
+                                    strokeWidth: 1.8,
                                   ),
-                                  decoration: BoxDecoration(
-                                    border: Border.all(
-                                      color: AppColors.success,
-                                      width: 1.2,
+                                ),
+                              ),
+
+                            // Tampon officiel vert en filigrane si validé
+                            if (delivery?.status == DeliveryStatus.delivered)
+                              Positioned(
+                                right: 0,
+                                bottom: 0,
+                                child: Transform.rotate(
+                                  angle: -0.15,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 5,
+                                      vertical: 2,
                                     ),
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: const Text(
-                                    'CONFORME\nLDF LIVRAISON',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      color: AppColors.success,
-                                      fontSize: 7,
-                                      fontWeight: FontWeight.w900,
-                                      letterSpacing: 0.4,
+                                    decoration: BoxDecoration(
+                                      border: Border.all(
+                                        color: AppColors.success,
+                                        width: 1.2,
+                                      ),
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: Text(
+                                      (signatureData != null && signatureData.isNotEmpty)
+                                          ? 'ÉMARGÉ\nLDF DIGITAL'
+                                          : 'CONFORME\nLDF LIVRAISON',
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(
+                                        color: AppColors.success,
+                                        fontSize: 7,
+                                        fontWeight: FontWeight.w900,
+                                        letterSpacing: 0.4,
+                                      ),
                                     ),
                                   ),
                                 ),
                               ),
-                            ),
                           ],
                         ),
                       ),
@@ -990,13 +1069,16 @@ class _DeliveryNoteScreenState extends State<DeliveryNoteScreen> {
     String num,
     String name,
     String qte,
-    String poids, {
+    String montant, {
     required bool isEven,
+    bool isTax = false,
   }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
       decoration: BoxDecoration(
-        color: isEven ? const Color(0xFFF8FAFC) : Colors.white,
+        color: isTax
+            ? const Color(0xFFF1F5F9)
+            : (isEven ? const Color(0xFFF8FAFC) : Colors.white),
         border: const Border(
           left: BorderSide(color: Color(0xFFE2E8F0)),
           right: BorderSide(color: Color(0xFFE2E8F0)),
@@ -1006,7 +1088,7 @@ class _DeliveryNoteScreenState extends State<DeliveryNoteScreen> {
       child: Row(
         children: [
           SizedBox(
-            width: 20,
+            width: 22,
             child: Text(
               num,
               style: const TextStyle(
@@ -1019,10 +1101,10 @@ class _DeliveryNoteScreenState extends State<DeliveryNoteScreen> {
             flex: 5,
             child: Text(
               name,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 9.5,
-                fontWeight: FontWeight.w500,
-                color: AppColors.textPrimary,
+                fontWeight: isTax ? FontWeight.w600 : FontWeight.w500,
+                color: isTax ? AppColors.textSecondary : AppColors.textPrimary,
               ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -1041,19 +1123,20 @@ class _DeliveryNoteScreenState extends State<DeliveryNoteScreen> {
             ),
           ),
           Expanded(
-            flex: 2,
+            flex: 3,
             child: Text(
-              poids,
+              montant,
               textAlign: TextAlign.right,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 9.5,
-                color: AppColors.textSecondary,
+                fontWeight: isTax ? FontWeight.w600 : FontWeight.w700,
+                color: isTax ? AppColors.textSecondary : AppColors.primaryDark,
               ),
             ),
           ),
           const SizedBox(width: 6),
           Container(
-            width: 48,
+            width: 44,
             alignment: Alignment.center,
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),

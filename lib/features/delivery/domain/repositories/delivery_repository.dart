@@ -10,5 +10,7 @@ abstract class DeliveryRepository {
     String? tourId,
     String? codeBl,
     String? notes,
+    String? signedBy,
+    String? signatureData,
   });
 }

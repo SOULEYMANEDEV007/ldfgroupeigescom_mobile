@@ -20,6 +20,12 @@ class DeliveryNote extends Equatable {
   final String? signatureUrl;
   final DeliveryNoteStatus status;
 
+  final String? orderNumber;
+  final String? compteContrib;
+  final double? montTva;
+  final double? montArsi;
+  final String? signedBy;
+
   const DeliveryNote({
     required this.number,
     required this.generatedAt,
@@ -35,6 +41,11 @@ class DeliveryNote extends Equatable {
     required this.totalWeight,
     this.signatureUrl,
     required this.status,
+    this.orderNumber,
+    this.compteContrib,
+    this.montTva,
+    this.montArsi,
+    this.signedBy,
   });
 
   @override
@@ -53,5 +64,10 @@ class DeliveryNote extends Equatable {
     totalWeight,
     signatureUrl,
     status,
+    orderNumber,
+    compteContrib,
+    montTva,
+    montArsi,
+    signedBy,
   ];
 }

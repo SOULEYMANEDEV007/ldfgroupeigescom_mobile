@@ -542,6 +542,27 @@ flutter run
      - Timeline : affichage de la date/heure de reprogrammation dans le bandeau ambré.
 - **Statut** : Traçabilité temporelle 100% alignée avec le backend IGESCOM et l'interface Web.
 
+### Session du 23/10/2026 — Intégration Données Réelles BL dans le PDF & Émargement / Signature Tactile Client (Démo V2)
+- **Objectifs du développeur (Finalisation V1 & Démo lundi)** :
+  1. **Point 1 (Données réelles BL)** : Éliminer 100% des données mockées dans la simulation PDF du Bon de Livraison (`delivery_note_screen.dart`) pour refléter fidèlement les données backend de l'API (`convotournees`) : chauffeur réel (`ADMIN PLATEAU`), véhicule réel (`Toyota Land Cruiser ABJ-1010-CI`), agence réelle, client réel avec compte contribuable (`compte_contrib`), et articles/lignes réelles de commande avec taxes (ARSI & TVA) et total exact en FCFA.
+  2. **Point 2 (Double option de validation pour la démo)** :
+     - **Option 1 (Directe)** : Validation standard rapide sans signature avec visa numérique automatique.
+     - **Option 2 (Émargement tactile — Démo V2)** : Pad de signature tactile plein écran tablette/mobile (`SignaturePadDialog`), saisie du nom du réceptionnaire, dessin fluide au doigt ou stylet, et intégration directe de la signature manuscrite vectorielle dans la case « CACHET & SIGNATURE CLIENT » du PDF du BL.
+- **Réalisations Effectuées** :
+  1. [delivery_note.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/delivery/domain/entities/delivery_note.dart) & [delivery.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/delivery/domain/entities/delivery.dart) : Ajout de `orderNumber`, `compteContrib`, `montTva`, `montArsi`, `signedBy` et `signatureData`.
+  2. [delivery_line_item.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/delivery/domain/entities/delivery_line_item.dart) : Ajout de `unit` pour les conditionnements (lot, colis, taxe).
+  3. [tour_model.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/tour/data/models/tour_model.dart) : Extraction enrichie du véhicule (`vehicule_info` : marque, modèle, immatriculation) et propagation du chauffeur, véhicule et agence aux `DeliveryModel`.
+  4. [delivery_model.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/delivery/data/models/delivery_model.dart) : Construction de l'entité `DeliveryNote` avec les articles réels, les taxes ARSI/TVA et les données de signature.
+  5. [signature_pad_dialog.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/delivery/presentation/widgets/signature_pad_dialog.dart) : Composant tactile d'émargement électronique avec saisie du réceptionnaire, dessin à l'encre bleue officielle LdF, effacement et sérialisation vectorielle fluide.
+  6. [delivery_note_screen.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/delivery/presentation/screens/delivery_note_screen.dart) :
+     - Remplacement intégral des données mockées : expéditeur avec agence, client avec code et compte contribuable, références réelles, tableau dynamique des articles et taxes avec montants en FCFA.
+     - Affichage de la vraie signature manuscrite vectorielle (`SignatureViewer`) et du tampon « ÉMARGÉ LDF DIGITAL » dans le cadre de réception.
+  7. [delivery_detail_screen.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/delivery/presentation/screens/delivery_detail_screen.dart) :
+     - Modale de choix `_showValidationChoiceModal` proposant au livreur/présentateur les deux options : Option 1 (Validation directe) et Option 2 (Émargement tactile client avec badge Démo V2).
+     - Raccourci tactile sous le bouton de consultation du BL.
+  8. [tour_local_data_source.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/tour/data/datasources/tour_local_data_source.dart), [delivery_remote_data_source.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/delivery/data/datasources/delivery_remote_data_source.dart), [delivery_repository_impl.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/delivery/data/repositories_impl/delivery_repository_impl.dart) et [delivery_cubit.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/delivery/presentation/bloc/delivery_cubit.dart) : Persistance de `signed_by` et `signature_data` en ligne et hors-ligne dans le cache local.
+- **Statut** : Les 2 chantiers de la démo sont finalisés, propres, sans mock et prêts pour la présentation de lundi.
+
 ---
 
 ## 7. 🌿 Informations Git

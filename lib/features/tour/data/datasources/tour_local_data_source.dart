@@ -45,6 +45,8 @@ abstract class TourLocalDataSource {
     required String status,
     String? notes,
     String? eventDate,
+    String? signedBy,
+    String? signatureData,
   });
 }
 
@@ -158,6 +160,8 @@ class TourLocalDataSourceImpl implements TourLocalDataSource {
     required String status,
     String? notes,
     String? eventDate,
+    String? signedBy,
+    String? signatureData,
   }) async {
     final raw = _prefs.getString(_cachedToursKey);
     if (raw == null || raw.isEmpty) return;
@@ -189,6 +193,12 @@ class TourLocalDataSourceImpl implements TourLocalDataSource {
             }
             if (notes != null && notes.isNotEmpty) {
               ligne['observation_livraison'] = notes;
+            }
+            if (signedBy != null && signedBy.isNotEmpty) {
+              ligne['signed_by'] = signedBy;
+            }
+            if (signatureData != null && signatureData.isNotEmpty) {
+              ligne['signature_data'] = signatureData;
             }
             modified = true;
           }

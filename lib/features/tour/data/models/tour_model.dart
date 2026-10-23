@@ -49,9 +49,19 @@ class TourModel extends TourEntity {
             : (json['livreurName']?.toString() ?? 'Livreur LDF'));
 
     // 4. Véhicule & Statut
-    final vehiclePlate = json['code_vehicule']?.toString() ??
-        json['vehiclePlate']?.toString() ??
-        'N/A';
+    final vehicule = json['vehicule_info'] is Map<String, dynamic>
+        ? json['vehicule_info'] as Map<String, dynamic>
+        : null;
+    final immat = vehicule?['immatriculation']?.toString().trim();
+    final marque = vehicule?['marque']?.toString().trim();
+    final modele = vehicule?['modele']?.toString().trim();
+    final vehiclePlate = (immat != null && immat.isNotEmpty)
+        ? ((marque != null && marque.isNotEmpty)
+            ? '$marque ${modele ?? ""}'.trim() + ' ($immat)'
+            : immat)
+        : (json['code_vehicule']?.toString() ??
+            json['vehiclePlate']?.toString() ??
+            'N/A');
 
     final statutStr = json['statut']?.toString().toUpperCase() ??
         json['status']?.toString().toUpperCase();
@@ -69,6 +79,10 @@ class TourModel extends TourEntity {
           map['code_tournee'].toString().isEmpty) {
         map['code_tournee'] = codeTournee;
       }
+      map['chauffeur_name'] = chauffeurName;
+      map['livreur_name'] = livreurName;
+      map['vehicle_plate'] = vehiclePlate;
+      map['agence_tournee'] = json['agence'] ?? 'DEPOT GRANDS COMPTES';
       return DeliveryModel.fromJson(map);
     }).toList();
 

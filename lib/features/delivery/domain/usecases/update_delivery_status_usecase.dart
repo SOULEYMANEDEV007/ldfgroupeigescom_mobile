@@ -17,6 +17,8 @@ class UpdateDeliveryStatusUseCase {
     String? tourId,
     String? codeBl,
     String? notes,
+    String? signedBy,
+    String? signatureData,
   }) {
     return repository.updateStatus(
       id,
@@ -24,6 +26,8 @@ class UpdateDeliveryStatusUseCase {
       tourId: tourId,
       codeBl: codeBl,
       notes: notes,
+      signedBy: signedBy,
+      signatureData: signatureData,
     );
   }
 }
