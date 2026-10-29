@@ -59,10 +59,12 @@ class _DeliveryNoteScreenState extends State<DeliveryNoteScreen> {
   @override
   Widget build(BuildContext context) {
     final delivery = widget.delivery;
-    final blNumber =
-        delivery?.deliveryNote?.number ??
-        delivery?.deliveryNoteNumber ??
-        'BL-2026-00452';
+    final blNumber = (delivery?.deliveryNote?.number.isNotEmpty == true &&
+            delivery!.deliveryNote!.number != 'N/A')
+        ? 'BL-${delivery.deliveryNote!.number}'
+        : (delivery?.deliveryNoteNumber.isNotEmpty == true
+            ? delivery!.deliveryNoteNumber
+            : 'BL');
 
     return Scaffold(
       backgroundColor: const Color(0xFF1E293B), // Fond ardoise PDF viewer
@@ -294,29 +296,35 @@ class _DeliveryNoteScreenState extends State<DeliveryNoteScreen> {
     required Delivery? delivery,
   }) {
     final deliveryNote = delivery?.deliveryNote;
-    final blNumber = deliveryNote?.number ??
-        delivery?.deliveryNoteNumber.replaceAll('BL-', '') ??
-        '699312-31';
-    final orderNumber = deliveryNote?.orderNumber ?? '402619-31';
-    final clientCode = deliveryNote?.clientCode ?? delivery?.clientCode ?? 'FGXMGX';
-    final clientName = deliveryNote?.clientName ?? delivery?.clientName ?? 'FRAIS GENERAUX MOYENS GENERAUX';
-    final address = deliveryNote?.clientAddress ?? delivery?.address ?? '';
-    final phone = delivery?.phone.isNotEmpty == true ? delivery!.phone : '2 720 306 363';
-    final compteContrib = deliveryNote?.compteContrib?.isNotEmpty == true
-        ? deliveryNote!.compteContrib!
-        : '9511970B';
-    final chauffeur = deliveryNote?.livreurName ?? 'ADMIN PLATEAU';
+    final blNumber = (deliveryNote?.number.isNotEmpty == true && deliveryNote!.number != 'N/A')
+        ? deliveryNote.number
+        : (delivery?.deliveryNoteNumber.replaceAll('BL-', '') ?? '');
+    final orderNumber = deliveryNote?.orderNumber ?? '';
+    final clientCode = (deliveryNote?.clientCode.isNotEmpty == true)
+        ? deliveryNote!.clientCode
+        : (delivery?.clientCode ?? '');
+    final clientName = (deliveryNote?.clientName.isNotEmpty == true)
+        ? deliveryNote!.clientName
+        : (delivery?.clientName ?? '');
+    final address = (deliveryNote?.clientAddress.isNotEmpty == true)
+        ? deliveryNote!.clientAddress
+        : (delivery?.address ?? '');
+    final phone = delivery?.phone.isNotEmpty == true ? delivery!.phone : '';
+    final compteContrib = deliveryNote?.compteContrib ?? '';
+    final chauffeur = (deliveryNote?.livreurName.isNotEmpty == true)
+        ? deliveryNote!.livreurName
+        : 'Livreur LDF';
     final items = deliveryNote?.items ?? [];
 
     final dateStr = delivery != null
         ? DateFormat('dd/MM/yyyy').format(delivery.scheduledTime)
         : DateFormat('dd/MM/yyyy').format(DateTime.now());
 
-    final montantHt = deliveryNote?.montantHtCumule ?? 382500.0;
-    final totalTva = deliveryNote?.totalTva ?? 68850.0;
-    final montantTtc = deliveryNote?.montantTtc ?? 451350.0;
-    final netAPayer = deliveryNote?.netAPayer ?? 451350.0;
-    final regulObs = deliveryNote?.observationRegul ?? 'REGUL VOIR TRSFRT N/40620016';
+    final montantHt = deliveryNote?.montantHtCumule ?? (delivery?.amount ?? 0.0);
+    final totalTva = deliveryNote?.totalTva ?? 0.0;
+    final montantTtc = deliveryNote?.montantTtc ?? (delivery?.amount ?? 0.0);
+    final netAPayer = deliveryNote?.netAPayer ?? (delivery?.amount ?? 0.0);
+    final regulObs = deliveryNote?.observationRegul ?? delivery?.notes ?? '';
 
     final signedBy = delivery?.signedBy ?? deliveryNote?.signedBy;
     final signatureData = delivery?.signatureData ?? deliveryNote?.signatureUrl;
@@ -427,7 +435,9 @@ class _DeliveryNoteScreenState extends State<DeliveryNoteScreen> {
                     const SizedBox(height: 6),
                     _buildMetaLine(
                       'Référence',
-                      '$blNumber de la Cmd : N° $orderNumber',
+                      orderNumber.isNotEmpty
+                          ? '$blNumber de la Cmd : N° $orderNumber'
+                          : (blNumber.isNotEmpty ? 'N° $blNumber' : ''),
                       boldVal: true,
                     ),
                     _buildMetaLine('Date', dateStr),
@@ -436,12 +446,17 @@ class _DeliveryNoteScreenState extends State<DeliveryNoteScreen> {
                     const SizedBox(height: 4),
                     _buildMetaLine(
                       'CLIENT',
-                      '($clientCode) $clientName',
+                      clientCode.isNotEmpty
+                          ? '($clientCode) $clientName'
+                          : clientName,
                       boldVal: true,
                     ),
-                    _buildMetaLine('N°Cpte contribuable', compteContrib),
-                    _buildMetaLine('Adresse', address),
-                    _buildMetaLine('Tél.', phone),
+                    if (compteContrib.isNotEmpty)
+                      _buildMetaLine('N°Cpte contribuable', compteContrib),
+                    if (address.isNotEmpty)
+                      _buildMetaLine('Adresse', address),
+                    if (phone.isNotEmpty)
+                      _buildMetaLine('Tél.', phone),
                     _buildMetaLine('Fax', ''),
                   ],
                 ),
@@ -532,7 +547,21 @@ class _DeliveryNoteScreenState extends State<DeliveryNoteScreen> {
                 const Divider(height: 1, thickness: 1, color: Colors.black87),
 
                 // Lignes réelles des articles
-                ...items.map((it) => Container(
+                if (items.isEmpty)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
+                    alignment: Alignment.center,
+                    child: const Text(
+                      'Détail des articles non disponible',
+                      style: TextStyle(
+                        fontSize: 8,
+                        fontStyle: FontStyle.italic,
+                        color: Colors.black54,
+                      ),
+                    ),
+                  )
+                else
+                  ...items.map((it) => Container(
                       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 5),
                       decoration: const BoxDecoration(
                         border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
@@ -637,18 +666,18 @@ class _DeliveryNoteScreenState extends State<DeliveryNoteScreen> {
             ),
           ),
 
-          const SizedBox(height: 6),
-
-          // ── Mention / Observation sous le tableau ──────────────────────────
-          Text(
-            regulObs,
-            style: const TextStyle(
-              fontSize: 8.5,
-              fontWeight: FontWeight.w800,
-              fontStyle: FontStyle.italic,
-              color: Colors.black87,
+          if (regulObs.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Text(
+              regulObs,
+              style: const TextStyle(
+                fontSize: 8.5,
+                fontWeight: FontWeight.w800,
+                fontStyle: FontStyle.italic,
+                color: Colors.black87,
+              ),
             ),
-          ),
+          ],
 
           const SizedBox(height: 8),
 
@@ -683,8 +712,8 @@ class _DeliveryNoteScreenState extends State<DeliveryNoteScreen> {
                             _buildTaxLine('Code TVA : 1', 'ARSI : 1', 'Code ARSI : 2'),
                             _buildTaxLine('Taux : 18 %', 'Taux : 5%', 'Taux : 2%'),
                             _buildTaxLine(
-                              'Base : ${NumberFormat('#,##0', 'fr_FR').format(montantHt)}',
-                              'Base : 0',
+                              'Base : ${NumberFormat('#,##0', 'fr_FR').format(deliveryNote?.tvaBase ?? (totalTva > 0 ? montantHt : 0.0))}',
+                              'Base : ${NumberFormat('#,##0', 'fr_FR').format(deliveryNote?.arsiBase ?? 0.0)}',
                               'Base : 0',
                             ),
                           ],

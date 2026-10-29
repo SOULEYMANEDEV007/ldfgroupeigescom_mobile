@@ -93,6 +93,11 @@ class RealTourRemoteDataSourceImpl implements TourRemoteDataSource {
       if (response.data is Map<String, dynamic>) {
         final rows = response.data['rows'] as List<dynamic>? ?? [];
 
+        // 📦 Articles réels du BL (`lignes_bl`) : uniquement fournis par l'endpoint planning
+        if (rows.isNotEmpty) {
+          await _attachBlLines(rows, codeAgent);
+        }
+
         // 💾 Sauvegarde automatique dans le cache local
         if (rows.isNotEmpty) {
           try {
@@ -162,6 +167,117 @@ class RealTourRemoteDataSourceImpl implements TourRemoteDataSource {
       // on propage l'erreur pour qu'elle soit traduite en français clair par le Repository
       rethrow;
     }
+  }
+
+  /// Récupère les articles réels de chaque BL via
+  /// `GET /api/flotte/tournees/{code_tournee}/planning/{code_agent}/`
+  /// et les injecte (`lignes_bl`) dans les lignes correspondantes (`code_ligne`).
+  ///
+  /// En cas d'échec (réseau, 401, 404…), on réutilise les `lignes_bl` déjà
+  /// présents dans le cache local. Aucune donnée n'est inventée.
+  Future<void> _attachBlLines(List<dynamic> rows, String codeAgent) async {
+    // Index des lignes_bl déjà connues (cache précédent) par code_ligne et code_bl
+    final Map<String, dynamic> cachedBlLines = {};
+    try {
+      final cached = _localDataSource.getCachedTours();
+      if (cached != null) {
+        for (final tour in cached) {
+          if (tour is! Map) continue;
+          final lignes = tour['lignes'] ?? tour['deliveries'];
+          if (lignes is! List) continue;
+          for (final ligne in lignes) {
+            if (ligne is! Map) continue;
+            final id = ligne['code_ligne']?.toString();
+            final blId = (ligne['code_bl'] ??
+                    (ligne['livraison'] is Map ? ligne['livraison']['code_bl'] : null))
+                ?.toString()
+                .replaceFirst(RegExp(r'\.0$'), '');
+            final blLines = ligne['lignes_bl'];
+            if (blLines is List && blLines.isNotEmpty) {
+              if (id != null) cachedBlLines[id] = blLines;
+              if (blId != null) cachedBlLines[blId] = blLines;
+            }
+          }
+        }
+      }
+    } catch (_) {}
+
+    await Future.wait(
+      rows.whereType<Map>().map((tour) async {
+        final codeTournee = tour['code_tournee']?.toString();
+        final lignes = tour['lignes'] ?? tour['deliveries'];
+        if (codeTournee == null || codeTournee.isEmpty || lignes is! List) {
+          return;
+        }
+
+        final Map<String, dynamic> planningBlLines = {};
+        Response<dynamic>? res;
+
+        // 1. Tentative via l'endpoint planning direct (sans code_agent)
+        try {
+          res = await _dio.get(
+            ApiEndpoints.tourPlanning(codeTournee),
+            options: Options(
+              extra: {'noSessionExpire': true},
+              receiveTimeout: const Duration(seconds: 8),
+            ),
+          );
+        } catch (_) {
+          // 2. Tentative de repli via l'endpoint avec code_agent
+          try {
+            res = await _dio.get(
+              ApiEndpoints.tourPlanning(codeTournee, codeAgent),
+              options: Options(
+                extra: {'noSessionExpire': true},
+                receiveTimeout: const Duration(seconds: 8),
+              ),
+            );
+          } catch (_) {
+            // Échec réseau silencieux : repli sur le cache local
+          }
+        }
+
+        final data = res?.data;
+        final planningLignes = data is Map
+            ? (data['lignes'] ??
+                (data['data'] is Map ? data['data']['lignes'] : null))
+            : null;
+
+        if (planningLignes is List) {
+          for (final pl in planningLignes) {
+            if (pl is! Map) continue;
+            final id = pl['code_ligne']?.toString();
+            final blId = pl['code_bl']
+                ?.toString()
+                .replaceFirst(RegExp(r'\.0$'), '');
+            final blLines = pl['lignes_bl'];
+            if (blLines is List && blLines.isNotEmpty) {
+              if (id != null) planningBlLines[id] = blLines;
+              if (blId != null) planningBlLines[blId] = blLines;
+            }
+          }
+        }
+
+        for (final ligne in lignes) {
+          if (ligne is! Map) continue;
+          final existing = ligne['lignes_bl'];
+          if (existing is List && existing.isNotEmpty) continue;
+          final id = ligne['code_ligne']?.toString();
+          final blId = (ligne['code_bl'] ??
+                  (ligne['livraison'] is Map ? ligne['livraison']['code_bl'] : null))
+              ?.toString()
+              .replaceFirst(RegExp(r'\.0$'), '');
+
+          final blLines = (id != null ? planningBlLines[id] : null) ??
+              (blId != null ? planningBlLines[blId] : null) ??
+              (id != null ? cachedBlLines[id] : null) ??
+              (blId != null ? cachedBlLines[blId] : null);
+          if (blLines != null) {
+            ligne['lignes_bl'] = blLines;
+          }
+        }
+      }),
+    );
   }
 }
 

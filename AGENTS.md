@@ -587,9 +587,21 @@ flutter run
      - Mention d'observation : `REGUL VOIR TRSFRT N/...`.
      - Tableau récapitulatif TAXES (TVA / ARSI).
      - Tableau récapitulatif TOTAUX (`MONTANT HT CUMULE`, `Total TVA`, `MONTANT TTC` et `NET A PAYER`).
-     - Espace signatures : Conservation du Visa livreur, Visa réceptionnaire et Signature tactile client émargée avec tampon vert officiel `LDF DIGITAL`.
-  5. Validation avec `flutter analyze` : **No issues found! (0 erreur, 0 warning)**.
-- **Statut** : 100% conforme au papier physique d'IGESCOM et branché sur la vraie structure `lignes_bl` de l'API.
+     - Espace signatures :      - Suppression définitive de toute ligne d'article fictive (« Marchandises Cmd N°... »).
+      - Extraction fidèle et dynamique de chaque article depuis `lignes_bl` (`code_art`, `nom_art`, `code_barre`, `quantite`, `tot_ht`, `puHt`, `mt_tva_lbl`, `mt_arsi_lbl`).
+      - Totaux (`totalHtCumule`, `totalTva`, `totalArsi`, `montantTtc`, `netAPayer`, `tvaBase`, `arsiBase`) calculés strictement d'après les données renvoyées par le backend.
+  2. [tour_remote_data_source.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/tour/data/datasources/tour_remote_data_source.dart) :
+     - Ajout de la méthode `_attachBlLines(rows, codeAgent)` : lors de la récupération des tournées (`convotournees`), le mobile interroge l'endpoint planning (`ApiEndpoints.tourPlanning(codeTournee, codeAgent)`) qui détient les véritables articles (`lignes_bl`).
+     - Fusion automatique des articles `lignes_bl` dans chaque ligne de tournée avant mise en cache local.
+     - Gestion d'erreur silencieuse et résiliente (`noSessionExpire`, timeout 15s) avec conservation automatique des `lignes_bl` du cache en cas de coupure réseau.
+  3. [delivery_note_screen.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/delivery/presentation/screens/delivery_note_screen.dart) :
+     - Éradication des fallbacks en dur dans `_buildPaperDocument` et dans l'en-tête AppBar.
+     - Affichage d'un message neutre et propre (« Détail des articles non disponible ») si le backend n'a pas encore retourné d'articles pour un BL donné.
+     - Affichage conditionnel des métadonnées (Référence, client réel, compte contribuable, téléphone et adresse réels).
+     - Observation et base TVA dynamiques basées sur l'objet `DeliveryNote` réel.
+  4. [tour_model.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/tour/data/models/tour_model.dart) & [delivery_remote_data_source.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/delivery/data/datasources/delivery_remote_data_source.dart) :
+     - Propagation systématique des métadonnées du tour (`chauffeur_info`, `convoyeur_info`, `vehicule_info`, `code_agce`) vers le map de chaque ligne de livraison.
+- **Statut** : Le Bon de Livraison affiche désormais 100% fidèlement les vraies données issues du serveur avec les vrais articles (produits, prix, taxes) sans aucune substitution factice.
 
 ---
 

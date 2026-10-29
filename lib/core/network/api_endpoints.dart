@@ -37,11 +37,13 @@ class ApiEndpoints {
   static String tourDetail(String codeTournee) =>
       '/api/flotte/tournees/$codeTournee/';
 
-  /// Planning d'une tournée.
-  /// ⚠️ Retourne actuellement HTTP 401 même avec un token valide : non utilisé
-  /// tant que le backend n'est pas corrigé (voir [tourDetail]).
-  static String tourPlanning(String codeTournee, String codeAgent) =>
-      '/api/flotte/tournees/$codeTournee/planning/$codeAgent/';
+  /// Planning d'une tournée (contient les vrais articles du BL `lignes_bl`).
+  /// Méthode: GET — `/api/flotte/tournees/{code_tournee}/planning/`
+  /// ou avec code agent `/api/flotte/tournees/{code_tournee}/planning/{code_agent}/`.
+  static String tourPlanning(String codeTournee, [String? codeAgent]) =>
+      (codeAgent != null && codeAgent.isNotEmpty)
+          ? '/api/flotte/tournees/$codeTournee/planning/$codeAgent/'
+          : '/api/flotte/tournees/$codeTournee/planning/';
 
   /// Validation d'une livraison (ligne de tournée).
   /// Méthode: POST

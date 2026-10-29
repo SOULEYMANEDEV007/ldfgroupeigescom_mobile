@@ -90,6 +90,9 @@ class TourModel extends TourEntity {
       map['livreur_name'] = livreurName;
       map['vehicle_plate'] = vehiclePlate;
       map['agence_tournee'] = json['agence'] ?? 'DEPOT GRANDS COMPTES';
+      map['chauffeur_info'] ??= json['chauffeur_info'];
+      map['convoyeur_info'] ??= json['convoyeur_info'];
+      map['vehicule_info'] ??= json['vehicule_info'];
       return DeliveryModel.fromJson(map);
     }).toList();
 

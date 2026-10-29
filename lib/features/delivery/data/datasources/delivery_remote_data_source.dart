@@ -70,6 +70,15 @@ class RealDeliveryRemoteDataSourceImpl implements DeliveryRemoteDataSource {
                 map['code_tournee'] == null) {
               map['code_tournee'] = currentTourId;
             }
+            map['chauffeur_info'] ??= tour['chauffeur_info'];
+            map['convoyeur_info'] ??= tour['convoyeur_info'];
+            map['vehicule_info'] ??= tour['vehicule_info'];
+            map['vehicle_plate'] ??=
+                (tour['vehicule_info'] is Map
+                    ? tour['vehicule_info']['immatriculation']
+                    : null) ??
+                tour['code_vehicule'];
+            map['agence_tournee'] ??= tour['code_agce'] ?? tour['agence'];
             if (status != null) {
               if (status == DeliveryStatus.delivered) {
                 map['statut_livraison'] = 'LIVREE';
