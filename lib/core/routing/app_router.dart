@@ -29,6 +29,10 @@ class AppRouter {
   static final GlobalKey<NavigatorState> _shellNavigatorKey =
       GlobalKey<NavigatorState>();
 
+  /// Contexte du navigateur racine (utile pour afficher un feedback après une
+  /// redirection globale, ex: session expirée).
+  static BuildContext? get rootContext => _rootNavigatorKey.currentContext;
+
   static final GoRouter router = GoRouter(
     navigatorKey: _rootNavigatorKey,
     initialLocation: '/',

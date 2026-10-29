@@ -9,6 +9,7 @@ import '../../../../core/di/injection.dart';
 import '../../../../core/utils/app_dialogs.dart';
 import '../../domain/entities/delivery.dart';
 import '../bloc/delivery_cubit.dart';
+import '../../../tour/data/datasources/tour_local_data_source.dart';
 
 class DeliveryValidationScreen extends StatelessWidget {
   final Delivery delivery;
@@ -41,9 +42,13 @@ class _DeliveryValidationViewState extends State<_DeliveryValidationView> {
     return BlocListener<DeliveryCubit, DeliveryState>(
       listener: (context, state) {
         if (state is DeliveryUpdated) {
+          final isOffline =
+              getIt<TourLocalDataSource>().isPendingSync(widget.delivery.id);
           AppDialogs.showSuccessDialog(
             context,
-            'Livraison #${widget.delivery.id} validée avec succès !',
+            isOffline
+                ? 'Livraison #${widget.delivery.id} enregistrée en local (mode hors-ligne).\nElle sera synchronisée dès le retour du réseau.'
+                : 'Livraison #${widget.delivery.id} validée avec succès !',
             onConfirm: () => context.go('/dashboard'),
           );
         }

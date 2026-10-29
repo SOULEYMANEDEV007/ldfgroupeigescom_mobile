@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_gradients.dart';
 import '../../../../core/constants/app_icons.dart';
+import '../../../../core/widgets/ldf_pattern_background.dart';
 import '../../domain/entities/history_entry.dart';
 import '../bloc/history_cubit.dart';
 
@@ -79,8 +80,9 @@ class _HistoryViewState extends State<_HistoryView> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return LdfPatternBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
       body: Column(
         children: [
           // ── Header gradient vert avec bouton retour ────────────────────────
@@ -308,8 +310,9 @@ class _HistoryViewState extends State<_HistoryView> {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 }
 
 // ─── Barre de filtres ─────────────────────────────────────────────────────────

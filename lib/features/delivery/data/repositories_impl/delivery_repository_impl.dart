@@ -1,6 +1,7 @@
 import 'package:dartz/dartz.dart';
 import 'package:injectable/injectable.dart';
 
+import '../../../../core/network/api_error_handler.dart';
 import '../../domain/entities/delivery.dart';
 import '../../domain/repositories/delivery_repository.dart';
 import '../datasources/delivery_remote_data_source.dart';
@@ -17,20 +18,39 @@ class DeliveryRepositoryImpl implements DeliveryRepository {
       final delivery = await remoteDataSource.getDeliveryById(id);
       return Right(delivery);
     } catch (e) {
-      return Left(e.toString());
+      return Left(ApiErrorHandler.message(e));
     }
   }
 
   @override
   Future<Either<String, Delivery>> updateStatus(
     String id,
-    DeliveryStatus status,
-  ) async {
+    DeliveryStatus status, {
+    String? tourId,
+    String? codeBl,
+    String? notes,
+    String? signedBy,
+    String? signatureData,
+  }) async {
     try {
-      final updated = await remoteDataSource.updateStatus(id, status);
+      final updated = await remoteDataSource.updateStatus(
+        id,
+        status,
+        tourId: tourId,
+        codeBl: codeBl,
+        notes: notes,
+        signedBy: signedBy,
+        signatureData: signatureData,
+      );
       return Right(updated);
     } catch (e) {
-      return Left(e.toString());
+      return Left(
+        ApiErrorHandler.message(
+          e,
+          unauthorizedMessage:
+              "Validation refusée par le serveur : ce compte n'est pas autorisé à valider cette livraison.",
+        ),
+      );
     }
   }
 }

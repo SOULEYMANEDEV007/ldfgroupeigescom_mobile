@@ -1,14 +1,11 @@
 import 'package:dio/dio.dart';
 import 'package:injectable/injectable.dart';
+
+import '../config/app_config.dart';
+import 'api_endpoints.dart';
 import 'token_manager.dart';
 
-/// Intercepteur global : injecte le JWT et centralise la gestion des 401.
-///
-/// 🛠️ **DÉVELOPPEUR FUTUR** :
-/// Cet intercepteur se branche sur `DioClient`.
-/// - À chaque requête, on lit le token dans SharedPreferences et on l'injecte.
-/// - Si l'API retourne HTTP 401 (Unauthorized), tu peux déclencher un Event/Stream
-///   pour forcer l'interface à déconnecter l'utilisateur (go('/login')).
+/// Intercepteur global : injecte le JWT et gère le rafraîchissement transparent ou les 401.
 @injectable
 class AuthInterceptor extends Interceptor {
   final TokenManager _tokenManager;
@@ -17,23 +14,94 @@ class AuthInterceptor extends Interceptor {
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
+    final isLogin = options.path.contains(ApiEndpoints.login) ||
+        options.path.contains(ApiEndpoints.erpLogin);
+
     final token = _tokenManager.getToken();
 
-    if (token != null && token.isNotEmpty) {
-      // Injection du token d'autorisation
+    if (!isLogin && token != null && token.isNotEmpty) {
       options.headers['Authorization'] = 'Bearer $token';
+    } else if (isLogin) {
+      options.headers.remove('Authorization');
     }
 
     super.onRequest(options, handler);
   }
 
   @override
-  void onError(DioException err, ErrorInterceptorHandler handler) {
-    if (err.response?.statusCode == 401) {
-      // TODO: Gérer l'expiration globale du token.
-      // Par exemple, émettre un stream que le main_router ou app_bloc écoute
-      // pour forcer `_tokenManager.clearSession()` et `context.go('/login')`.
+  Future<void> onError(
+    DioException err,
+    ErrorInterceptorHandler handler,
+  ) async {
+    final isLoginRequest = err.requestOptions.path.contains(ApiEndpoints.login) ||
+        err.requestOptions.path.contains(ApiEndpoints.erpLogin);
+    final isRefreshRequest =
+        err.requestOptions.path.contains(ApiEndpoints.refreshToken);
+    final isProfileRequest = err.requestOptions.path.contains('/profil/');
+    final noSessionExpire = err.requestOptions.extra['noSessionExpire'] == true;
+    final isInstanceTokenError = err.response?.data is Map &&
+        (err.response?.data['detail']?.toString().toLowerCase().contains('instance') ??
+            false);
+    final shouldIgnoreInstanceError =
+        isInstanceTokenError && _tokenManager.hasTenantClaim;
+    final hadSession = (_tokenManager.getToken() ?? '').isNotEmpty;
+
+    // Un 401 sur le login = mauvais identifiants (géré par l'écran de login).
+    // On n'invalide pas la session si l'endpoint est un endpoint profil web ou marqué noSessionExpire.
+    if (err.response?.statusCode == 401 &&
+        !isLoginRequest &&
+        !isRefreshRequest &&
+        !isProfileRequest &&
+        !noSessionExpire &&
+        !shouldIgnoreInstanceError &&
+        hadSession) {
+      final refreshToken = _tokenManager.getRefreshToken();
+
+      if (refreshToken != null && refreshToken.isNotEmpty) {
+        try {
+          // Tentative de rafraîchissement via instance Dio isolée (évite les boucles)
+          final refreshDio = Dio(
+            BaseOptions(
+              baseUrl: AppConfig.apiBaseUrl,
+              connectTimeout: AppConfig.connectTimeout,
+              receiveTimeout: AppConfig.receiveTimeout,
+              headers: {'Content-Type': 'application/json'},
+            ),
+          );
+
+          final refreshResponse = await refreshDio.post(
+            ApiEndpoints.refreshToken,
+            data: {'refresh': refreshToken},
+          );
+
+          if (refreshResponse.statusCode == 200 &&
+              refreshResponse.data is Map<String, dynamic>) {
+            final data = refreshResponse.data as Map<String, dynamic>;
+            final newAccessToken = data['access']?.toString();
+            final newRefreshToken = data['refresh']?.toString();
+
+            if (newAccessToken != null && newAccessToken.isNotEmpty) {
+              await _tokenManager.updateTokens(
+                newAccessToken,
+                refreshToken: newRefreshToken,
+              );
+
+              // Rejouer la requête d'origine avec le nouveau token
+              final options = err.requestOptions;
+              options.headers['Authorization'] = 'Bearer $newAccessToken';
+
+              final retryResponse = await refreshDio.fetch(options);
+              return handler.resolve(retryResponse);
+            }
+          }
+        } catch (_) {
+          // Échec du refresh -> invalidation définitive de la session
+        }
+      }
+
+      await _tokenManager.expireSession();
     }
+
     super.onError(err, handler);
   }
 }

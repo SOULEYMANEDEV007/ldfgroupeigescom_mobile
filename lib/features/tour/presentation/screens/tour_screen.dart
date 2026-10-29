@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_gradients.dart';
 import '../../../../core/constants/app_icons.dart';
 import '../../../../core/di/injection.dart';
+import '../../../../core/widgets/ldf_pattern_background.dart';
 import '../../domain/entities/tour_entity.dart';
 import '../bloc/tour_cubit.dart';
 
@@ -26,8 +28,9 @@ class TourView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
+    return LdfPatternBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -66,9 +69,9 @@ class TourView extends StatelessWidget {
                           Text(
                             'Suivi de vos trajets de livraison',
                             style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
+                              color: Color(0xDCFFFFFF),
+                              fontSize: 14.5,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ],
@@ -104,21 +107,46 @@ class TourView extends StatelessWidget {
 
                 if (state is TourError) {
                   return Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          AppIcons.error,
-                          color: AppColors.error,
-                          size: 48,
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          'Erreur : ${state.message}',
-                          style: const TextStyle(color: AppColors.error),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            AppIcons.cloudOff,
+                            color: AppColors.textSecondary.withValues(alpha: 0.6),
+                            size: 48,
+                          ),
+                          const SizedBox(height: 14),
+                          Text(
+                            state.message,
+                            style: const TextStyle(
+                              color: AppColors.textPrimary,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton.icon(
+                            onPressed: () =>
+                                context.read<TourCubit>().fetchTours(),
+                            icon: const Icon(AppIcons.refresh, size: 18),
+                            label: const Text('Réessayer'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 20,
+                                vertical: 10,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   );
                 }
@@ -169,8 +197,9 @@ class TourView extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 }
 
 // ─── Card d'une tournée ───────────────────────────────────────────────────────
@@ -243,31 +272,31 @@ class _TourCard extends StatelessWidget {
                             tour.reference,
                             style: TextStyle(
                               color: statusColor,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 13.5,
                             ),
                           ),
                         ],
                       ),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 2,
+                          horizontal: 12,
+                          vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: statusColor.withAlpha(20),
+                          color: statusColor.withAlpha(25),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: statusColor.withAlpha(80),
-                            width: 1,
+                            color: statusColor.withAlpha(90),
+                            width: 1.2,
                           ),
                         ),
                         child: Text(
                           statusLabel,
                           style: TextStyle(
                             color: statusColor,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 12.5,
                           ),
                         ),
                       ),
@@ -285,26 +314,119 @@ class _TourCard extends StatelessWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            'Tournée ${tour.agence}',
-                            style: Theme.of(context).textTheme.titleMedium
-                                ?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 14,
-                                  color: AppColors.textPrimary,
-                                ),
+                          Expanded(
+                            child: Text(
+                              tour.displayName,
+                              style: Theme.of(context).textTheme.titleMedium
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 16.5,
+                                    color: AppColors.textPrimary,
+                                  ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
+                          const SizedBox(width: 8),
                           Text(
                             '$totalDeliveries livraison${totalDeliveries > 1 ? 's' : ''}',
-                            style: Theme.of(context).textTheme.bodySmall
+                            style: Theme.of(context).textTheme.bodyMedium
                                 ?.copyWith(
                                   color: AppColors.textSecondary,
-                                  fontWeight: FontWeight.w600,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 13.5,
                                 ),
                           ),
                         ],
                       ),
+
+                      // Date et Heure de la tournée (ex: 22 oct. 2026 · 09:00)
                       const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          const Icon(
+                            AppIcons.calendar,
+                            size: 13,
+                            color: AppColors.primary,
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            DateFormat('dd MMM yyyy', 'fr_FR').format(tour.date),
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: AppColors.textPrimary,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          if (tour.heureDepart.isNotEmpty) ...[
+                            Text(
+                              ' · ',
+                              style: TextStyle(
+                                color: AppColors.textSecondary.withAlpha(120),
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const Icon(
+                              AppIcons.clock,
+                              size: 12,
+                              color: AppColors.textSecondary,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              tour.heureDepart,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: AppColors.textSecondary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+
+                      // Véhicule et Chauffeur
+                      if ((tour.vehiclePlate.isNotEmpty &&
+                              tour.vehiclePlate != 'N/A') ||
+                          tour.chauffeurName.isNotEmpty) ...[
+                        const SizedBox(height: 5),
+                        Row(
+                          children: [
+                            if (tour.vehiclePlate.isNotEmpty &&
+                                tour.vehiclePlate != 'N/A') ...[
+                              const Icon(
+                                AppIcons.truck,
+                                size: 14,
+                                color: AppColors.textSecondary,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                tour.vehiclePlate,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  color: AppColors.textSecondary,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                            ],
+                            if (tour.chauffeurName.isNotEmpty) ...[
+                              Expanded(
+                                child: Text(
+                                  tour.chauffeurName,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: AppColors.textSecondary,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ],
+                      const SizedBox(height: 10),
 
                       // Progression sur une ligne avec barre
                       Row(
@@ -314,12 +436,12 @@ class _TourCard extends StatelessWidget {
                               borderRadius: BorderRadius.circular(99),
                               child: LinearProgressIndicator(
                                 value: progress,
-                                minHeight: 5,
+                                minHeight: 6,
                                 backgroundColor: AppColors.border,
                                 valueColor: AlwaysStoppedAnimation<Color>(
                                   progress == 1.0
                                       ? AppColors.success
-                                      : AppColors.primary,
+                                      : AppColors.accentBlue,
                                 ),
                               ),
                             ),
@@ -328,8 +450,8 @@ class _TourCard extends StatelessWidget {
                           Text(
                             '$completedDeliveries/$totalDeliveries',
                             style: const TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w700,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w800,
                               color: AppColors.primaryDark,
                             ),
                           ),
@@ -353,14 +475,14 @@ class _TourCard extends StatelessWidget {
 
   Color _statusColor(TourStatus s) => switch (s) {
     TourStatus.pending => AppColors.warning,
-    TourStatus.inProgress => AppColors.primary,
+    TourStatus.inProgress => AppColors.accentBlue,
     TourStatus.completed => AppColors.success,
     TourStatus.cancelled => AppColors.error,
   };
 
   Color _statusBgColor(TourStatus s) => switch (s) {
     TourStatus.pending => AppColors.warningSoft,
-    TourStatus.inProgress => AppColors.primarySoft,
+    TourStatus.inProgress => AppColors.accentBlueSoft,
     TourStatus.completed => AppColors.successSoft,
     TourStatus.cancelled => AppColors.errorSoft,
   };

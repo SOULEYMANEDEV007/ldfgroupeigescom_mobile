@@ -1,51 +1,144 @@
+import 'package:dio/dio.dart';
 import 'package:injectable/injectable.dart';
-import '../models/user_model.dart';
-// import 'package:dio/dio.dart'; // Utile lors du branchement réel avec la vraie API
 
+import '../../../../core/di/app_environments.dart';
+import '../../../../core/network/api_endpoints.dart';
+import '../../../../core/network/api_error_handler.dart';
 import '../../../../core/network/token_manager.dart';
+import '../models/user_model.dart';
 
 abstract class AuthRemoteDataSource {
-  Future<UserModel> login(String matricule, String agence, String password);
+  Future<UserModel> login(String username, String password);
 }
 
-/// MOCK API : Simule le backend pour ne pas bloquer le développement Mobile.
-/// Quand les vraies APIs seront prêtes, nous créerons un [RealAuthRemoteDataSourceImpl]
-@LazySingleton(as: AuthRemoteDataSource)
-class MockAuthRemoteDataSourceImpl implements AuthRemoteDataSource {
+/// Authentification réelle via l'API LDF.
+@LazySingleton(as: AuthRemoteDataSource, env: [kRealEnv])
+class RealAuthRemoteDataSourceImpl implements AuthRemoteDataSource {
+  final Dio _dio;
   final TokenManager _tokenManager;
 
-  MockAuthRemoteDataSourceImpl(this._tokenManager);
+  RealAuthRemoteDataSourceImpl(this._dio, this._tokenManager);
 
   @override
-  Future<UserModel> login(
-    String matricule,
-    String agence,
-    String password,
-  ) async {
-    // 1. On simule un temps de latence réseau (ex: serveur distant LdF)
-    await Future.delayed(const Duration(seconds: 2));
-
-    // 2. On vérifie des accès codés en dur pour la simulation
-    // On ignore l'agence mais on la réclame pour le mock
-    if (matricule == 'LDF-999' && password == '123') {
-      const user = UserModel(
-        id: 'LDF-999',
-        name: 'Kouassi Livreur',
-        email: 'livreur@ldf.ci',
-        role: 'DRIVER_ROLE',
+  Future<UserModel> login(String username, String password) async {
+    try {
+      // 1. Appel de l'API d'authentification.
+      final response = await _dio.post<dynamic>(
+        ApiEndpoints.login,
+        data: {'nom_util': username.trim(), 'mdpasse': password},
       );
 
-      // Simulation de la sauvegarde du token JWT renvoyé par l'API
-      final pseudoJwt =
-          'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.MockPayload.${DateTime.now().millisecondsSinceEpoch}';
-      await _tokenManager.saveSession(pseudoJwt, user.name);
+      // 2. Vérification de la réponse.
+      final body = response.data;
+
+      if (body is! Map) {
+        throw const ApiException('Réponse invalide du serveur.');
+      }
+
+      if (body['status'] != 'success') {
+        throw ApiException(
+          body['message']?.toString() ?? 'Échec de l’authentification.',
+        );
+      }
+
+      // 3. Extraction des données.
+      final rawData = body['data'];
+
+      if (rawData is! Map) {
+        throw const ApiException('Les données utilisateur sont absentes.');
+      }
+
+      final data = Map<String, dynamic>.from(rawData);
+      final rawAgent = data['agent'];
+      final rawToken = data['token'];
+
+      if (rawAgent is! Map) {
+        throw const ApiException(
+          'Informations de l’agent absentes de la réponse.',
+        );
+      }
+
+      if (rawToken is! String || rawToken.trim().isEmpty) {
+        throw const ApiException('Le serveur n’a retourné aucun token valide.');
+      }
+
+      final agentData = Map<String, dynamic>.from(rawAgent);
+      final user = UserModel.fromJson(agentData);
+      String finalToken = rawToken.trim();
+      String? finalRefresh = data['refresh']?.toString();
+
+      // 4. Acquisition transparente du token ERP (claim 'tenant') pour débloquer la validation des livraisons
+      try {
+        final erpResponse = await _dio.post<dynamic>(
+          ApiEndpoints.erpLogin,
+          data: {
+            'nom_util': username.trim(),
+            'mdpasse': password,
+            'code_agce': user.agencyCode,
+          },
+          options: Options(
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json',
+            },
+          ),
+        );
+        final erpBody = erpResponse.data;
+        if (erpBody is Map<String, dynamic> &&
+            erpBody['data'] is Map<String, dynamic>) {
+          final erpData = erpBody['data'] as Map<String, dynamic>;
+          final erpToken = erpData['token']?.toString();
+          if (erpToken != null && erpToken.isNotEmpty) {
+            finalToken = erpToken;
+            finalRefresh = erpData['refresh']?.toString() ?? finalRefresh;
+          }
+        }
+      } catch (_) {
+        // Si /api/login/ est inaccessible, on conserve le token de base
+      }
+
+      // 5. Sauvegarde persistante de la session.
+      await _tokenManager.saveSession(
+        finalToken,
+        user.name,
+        refreshToken: finalRefresh,
+        codeAgent: user.id,
+        agencyCode: user.agencyCode,
+      );
 
       return user;
-    }
+    } on DioException catch (e) {
+      final statusCode = e.response?.statusCode;
+      final responseData = e.response?.data;
 
-    // 3. Simulation des erreurs
-    throw Exception(
-      'Matricule ou mot de passe incorrect (Mock: LDF-999 / 123)',
-    );
+      String? serverMessage;
+
+      if (responseData is Map && responseData['message'] != null) {
+        serverMessage = responseData['message'].toString();
+      }
+
+      if (statusCode == 401) {
+        throw ApiException(serverMessage ?? 'Identifiants incorrects.');
+      }
+
+      if (statusCode == 403) {
+        throw ApiException(serverMessage ?? 'Accès refusé par le serveur.');
+      }
+
+      if (statusCode != null) {
+        throw ApiException(
+          serverMessage ?? 'Erreur serveur (HTTP $statusCode).',
+        );
+      }
+
+      throw ApiException(
+        'Impossible de joindre le serveur. '
+        'Vérifie la connexion réseau.',
+      );
+    } on ApiException {
+      rethrow;
+    } catch (e) {
+      throw ApiException('Erreur lors de la connexion : $e');
+    }
   }
 }

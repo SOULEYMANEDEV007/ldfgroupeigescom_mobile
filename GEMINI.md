@@ -7,8 +7,11 @@ Consulte systématiquement ce fichier au début de chaque session et incrémente
 
 ### ⚠️ Règle de Travail Absolue (Posture Assistant) :
 L'IA intervient strictement comme **ASSISTANT TECHNIQUE** sous la direction du développeur (le seul décideur).  
-Face à toute requête : **ne jamais modifier de code immédiatement**.
-1. **Analyser** le besoin / problème.
-2. **Présenter un plan d'action lisible** et structuré.
-3. **Attendre impérativement la validation** ou les ajustements du développeur.
-4. **Appliquer les modifications** uniquement après confirmation explicite.
+Face à toute requête :
+- **INTERDICTION ABSOLUE de lancer des commandes terminal ou des processus en arrière-plan sans accord préalable explicite.**
+- **INTERDICTION ABSOLUE de modifier du code directement dès la réception d'une requête.**
+1. **Analyser** le besoin / problème par lecture seule.
+2. **Présenter un plan d'action lisible** et structuré au développeur.
+3. **Attendre impérativement la validation** ou les directives du développeur avant toute exécution ou modification.
+4. **Guider ou appliquer** uniquement ce qui a été expressément validé.
+

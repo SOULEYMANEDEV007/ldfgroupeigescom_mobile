@@ -6,6 +6,7 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_icons.dart';
 import '../../../../core/utils/app_feedback.dart';
 import '../../domain/entities/delivery.dart';
+import '../widgets/signature_pad_dialog.dart';
 
 class DeliveryNoteScreen extends StatefulWidget {
   final Delivery? delivery;
@@ -23,16 +24,22 @@ class _DeliveryNoteScreenState extends State<DeliveryNoteScreen> {
   void _zoomIn() {
     setState(() {
       _zoomScale = (_zoomScale + 0.15).clamp(0.8, 1.6);
-      _transformationController.value =
-          Matrix4.diagonal3Values(_zoomScale, _zoomScale, 1.0);
+      _transformationController.value = Matrix4.diagonal3Values(
+        _zoomScale,
+        _zoomScale,
+        1.0,
+      );
     });
   }
 
   void _zoomOut() {
     setState(() {
       _zoomScale = (_zoomScale - 0.15).clamp(0.8, 1.6);
-      _transformationController.value =
-          Matrix4.diagonal3Values(_zoomScale, _zoomScale, 1.0);
+      _transformationController.value = Matrix4.diagonal3Values(
+        _zoomScale,
+        _zoomScale,
+        1.0,
+      );
     });
   }
 
@@ -52,14 +59,10 @@ class _DeliveryNoteScreenState extends State<DeliveryNoteScreen> {
   @override
   Widget build(BuildContext context) {
     final delivery = widget.delivery;
-    final blNumber = delivery?.deliveryNoteNumber ?? 'BL-2026-00452';
-    final clientName = delivery?.clientName ?? 'SOCIÉTÉ ANONYME AFRIQUE';
-    final address = delivery?.address ?? 'Abidjan, Zone 4 - Rue des Brasseurs';
-    final phone = delivery?.phone ?? '+225 07 07 07 07 07';
-    final weight = delivery != null ? '${delivery.weight} kg' : '900 kg';
-    final dateStr = delivery != null
-        ? DateFormat('dd/MM/yyyy HH:mm').format(delivery.scheduledTime)
-        : DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now());
+    final blNumber =
+        delivery?.deliveryNote?.number ??
+        delivery?.deliveryNoteNumber ??
+        'BL-2026-00452';
 
     return Scaffold(
       backgroundColor: const Color(0xFF1E293B), // Fond ardoise PDF viewer
@@ -146,15 +149,7 @@ class _DeliveryNoteScreenState extends State<DeliveryNoteScreen> {
                 child: Center(
                   child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 580),
-                    child: _buildPaperDocument(
-                      context,
-                      blNumber: blNumber,
-                      clientName: clientName,
-                      address: address,
-                      phone: phone,
-                      weight: weight,
-                      dateStr: dateStr,
-                    ),
+                    child: _buildPaperDocument(context, delivery: delivery),
                   ),
                 ),
               ),
@@ -168,7 +163,10 @@ class _DeliveryNoteScreenState extends State<DeliveryNoteScreen> {
             right: 16,
             child: Center(
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: const Color(0xFF0F172A).withValues(alpha: 0.92),
                   borderRadius: BorderRadius.circular(30),
@@ -219,7 +217,10 @@ class _DeliveryNoteScreenState extends State<DeliveryNoteScreen> {
                       icon: const Icon(AppIcons.zoomOut, size: 18),
                       color: Colors.white,
                       padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                      constraints: const BoxConstraints(
+                        minWidth: 32,
+                        minHeight: 32,
+                      ),
                       tooltip: 'Dézoomer',
                       onPressed: _zoomOut,
                     ),
@@ -249,7 +250,10 @@ class _DeliveryNoteScreenState extends State<DeliveryNoteScreen> {
                       icon: const Icon(AppIcons.zoomIn, size: 18),
                       color: Colors.white,
                       padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                      constraints: const BoxConstraints(
+                        minWidth: 32,
+                        minHeight: 32,
+                      ),
                       tooltip: 'Zoomer',
                       onPressed: _zoomIn,
                     ),
@@ -267,7 +271,10 @@ class _DeliveryNoteScreenState extends State<DeliveryNoteScreen> {
                       icon: const Icon(AppIcons.maximize, size: 18),
                       color: Colors.white,
                       padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                      constraints: const BoxConstraints(
+                        minWidth: 32,
+                        minHeight: 32,
+                      ),
                       tooltip: 'Ajuster à l\'écran',
                       onPressed: _resetZoom,
                     ),
@@ -281,20 +288,44 @@ class _DeliveryNoteScreenState extends State<DeliveryNoteScreen> {
     );
   }
 
-  // ── Feuille de document papier A4 ──────────────────────────────────────────
+  // ── Feuille de document papier A4 officiel IGESCOM ──────────────────────────
   Widget _buildPaperDocument(
     BuildContext context, {
-    required String blNumber,
-    required String clientName,
-    required String address,
-    required String phone,
-    required String weight,
-    required String dateStr,
+    required Delivery? delivery,
   }) {
+    final deliveryNote = delivery?.deliveryNote;
+    final blNumber = deliveryNote?.number ??
+        delivery?.deliveryNoteNumber.replaceAll('BL-', '') ??
+        '699312-31';
+    final orderNumber = deliveryNote?.orderNumber ?? '402619-31';
+    final clientCode = deliveryNote?.clientCode ?? delivery?.clientCode ?? 'FGXMGX';
+    final clientName = deliveryNote?.clientName ?? delivery?.clientName ?? 'FRAIS GENERAUX MOYENS GENERAUX';
+    final address = deliveryNote?.clientAddress ?? delivery?.address ?? '';
+    final phone = delivery?.phone.isNotEmpty == true ? delivery!.phone : '2 720 306 363';
+    final compteContrib = deliveryNote?.compteContrib?.isNotEmpty == true
+        ? deliveryNote!.compteContrib!
+        : '9511970B';
+    final chauffeur = deliveryNote?.livreurName ?? 'ADMIN PLATEAU';
+    final items = deliveryNote?.items ?? [];
+
+    final dateStr = delivery != null
+        ? DateFormat('dd/MM/yyyy').format(delivery.scheduledTime)
+        : DateFormat('dd/MM/yyyy').format(DateTime.now());
+
+    final montantHt = deliveryNote?.montantHtCumule ?? 382500.0;
+    final totalTva = deliveryNote?.totalTva ?? 68850.0;
+    final montantTtc = deliveryNote?.montantTtc ?? 451350.0;
+    final netAPayer = deliveryNote?.netAPayer ?? 451350.0;
+    final regulObs = deliveryNote?.observationRegul ?? 'REGUL VOIR TRSFRT N/40620016';
+
+    final signedBy = delivery?.signedBy ?? deliveryNote?.signedBy;
+    final signatureData = delivery?.signatureData ?? deliveryNote?.signatureUrl;
+
     return Container(
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(4),
         border: Border.all(color: const Color(0xFFCBD5E1), width: 1),
         boxShadow: [
           BoxShadow(
@@ -308,650 +339,646 @@ class _DeliveryNoteScreenState extends State<DeliveryNoteScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // ── Bandeau En-tête officiel LdF ───────────────────────────────────
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            decoration: const BoxDecoration(
-              color: AppColors.primary,
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(5),
-                topRight: Radius.circular(5),
-              ),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Logo & Société (Flexible)
-                Expanded(
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(7),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Icon(
-                          AppIcons.truck,
-                          color: AppColors.primaryDark,
-                          size: 22,
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: const [
-                            Text(
-                              'LdF GROUPE CI',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: 0.5,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            Text(
-                              'Logistique & Distribution',
-                              style: TextStyle(
-                                color: Colors.white70,
-                                fontSize: 10.5,
-                                fontWeight: FontWeight.w500,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            Text(
-                              'RCCM : CI-ABJ-2023-B-1452',
-                              style: TextStyle(
-                                color: Colors.white60,
-                                fontSize: 8.5,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 8),
-
-                // Titre BL & Métadonnées
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.navBarYellow,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: const Text(
-                        'BON DE LIVRAISON',
-                        style: TextStyle(
-                          color: AppColors.primaryDark,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 0.8,
-                        ),
+          // ── En-tête : Société (Gauche) & Titre BL (Droite) ──────────────────
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 🏢 GAUCHE : Cartouche légal & bancaire officiel LDF
+              Expanded(
+                flex: 5,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    Text(
+                      'LIBRAIRIE DE FRANCE GROUPE',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.black87,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: 1),
                     Text(
-                      'N° $blNumber',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    Text(
-                      'Date : $dateStr',
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontSize: 9.5,
+                      'S.A avec C.A au capital de 2 188 950 000\n'
+                      'RC : CI-ABJ-1995-B-188116-CC N° 9511970 B\n'
+                      'Régime normal CDI DGE\n'
+                      'BICICI : CI006 01550 0100720000110 11\n'
+                      'BIAO : CI042 01231 031360265625 54\n'
+                      'SIB : CI007 01030 026681600120 50\n'
+                      'BNI : CI092 01001 00207550003 61\n'
+                      'ECOBANK : CI059 01010 00005786618 09\n'
+                      '01 BP 228 Abidjan 01\n'
+                      'Librairie de France\n'
+                      'Tél. : 20 30 63 63 - Fax : 20 30 63 64\n'
+                      'Email : ldf@ldfgroupe.com\n'
+                      'Burotop\n'
+                      'Barnoin Informatique\n'
+                      'Tél : 20 25 31 25 - Fax : 20 22 08 92\n'
+                      'N° Compte comptable :',
+                      style: TextStyle(
+                        fontSize: 7.5,
+                        height: 1.15,
+                        color: Colors.black54,
+                        fontFamily: 'monospace',
                       ),
                     ),
                   ],
                 ),
-              ],
-            ),
-          ),
+              ),
 
-          // ── Corps du Document ──────────────────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // ── Boîtes Émetteur & Destinataire ───────────────────────────
-                Row(
+              const SizedBox(width: 8),
+
+              // 📄 DROITE : igescom + BON DE LIVRAISON + Références & Client
+              Expanded(
+                flex: 5,
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Émetteur
-                    Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF8FAFC),
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: const Color(0xFFE2E8F0)),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: const [
-                            Text(
-                              'EXPÉDITEUR',
-                              style: TextStyle(
-                                color: AppColors.textSecondary,
-                                fontSize: 9,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: 0.8,
-                              ),
-                            ),
-                            SizedBox(height: 3),
-                            Text(
-                              'LDF Central Hub Abidjan',
-                              style: TextStyle(
-                                color: AppColors.textPrimary,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            Text(
-                              'Zone Industrielle Yopougon, Rue 12',
-                              style: TextStyle(
-                                color: AppColors.textSecondary,
-                                fontSize: 9.5,
-                              ),
-                            ),
-                            Text(
-                              '+225 27 20 00 00 00',
-                              style: TextStyle(
-                                color: AppColors.textSecondary,
-                                fontSize: 9.5,
-                              ),
-                            ),
-                          ],
+                    const Align(
+                      alignment: Alignment.topRight,
+                      child: Text(
+                        'igescom',
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontStyle: FontStyle.italic,
+                          color: Colors.black54,
                         ),
                       ),
                     ),
-                    const SizedBox(width: 10),
-
-                    // Destinataire / Client
-                    Expanded(
+                    const SizedBox(height: 2),
+                    Center(
                       child: Container(
-                        padding: const EdgeInsets.all(10),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF8FAFC),
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(
-                            color: AppColors.primary.withValues(alpha: 0.3),
+                          border: Border.all(color: Colors.black87, width: 1.2),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                        child: const Text(
+                          'BON DE LIVRAISON',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 0.5,
+                            color: Colors.black87,
                           ),
                         ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'DESTINATAIRE / CLIENT',
-                              style: TextStyle(
-                                color: AppColors.primary,
-                                fontSize: 9,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: 0.8,
-                              ),
-                            ),
-                            const SizedBox(height: 3),
-                            Text(
-                              clientName,
-                              style: const TextStyle(
-                                color: AppColors.textPrimary,
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            Text(
-                              address,
-                              style: const TextStyle(
-                                color: AppColors.textSecondary,
-                                fontSize: 9.5,
-                              ),
-                            ),
-                            Text(
-                              'Tél : $phone',
-                              style: const TextStyle(
-                                color: AppColors.textSecondary,
-                                fontSize: 9.5,
-                              ),
-                            ),
-                          ],
-                        ),
                       ),
                     ),
+                    const SizedBox(height: 6),
+                    _buildMetaLine(
+                      'Référence',
+                      '$blNumber de la Cmd : N° $orderNumber',
+                      boldVal: true,
+                    ),
+                    _buildMetaLine('Date', dateStr),
+                    _buildMetaLine('Devise', 'FCFA'),
+                    _buildMetaLine('Mode de règlement', ''),
+                    const SizedBox(height: 4),
+                    _buildMetaLine(
+                      'CLIENT',
+                      '($clientCode) $clientName',
+                      boldVal: true,
+                    ),
+                    _buildMetaLine('N°Cpte contribuable', compteContrib),
+                    _buildMetaLine('Adresse', address),
+                    _buildMetaLine('Tél.', phone),
+                    _buildMetaLine('Fax', ''),
                   ],
                 ),
+              ),
+            ],
+          ),
 
-                const SizedBox(height: 14),
+          const SizedBox(height: 12),
 
-                // ── Références Tournée & Véhicule (Grille 2x2 Adaptative) ────
+          // ── Tableau officiel des Articles (8 colonnes) ─────────────────────
+          Container(
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.black87, width: 1),
+            ),
+            child: Column(
+              children: [
+                // En-tête du tableau
                 Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: AppColors.primarySoft,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildMiniInfo(
-                              'CHAUFFEUR',
-                              'Livreur LDF (Mat: LDF-023)',
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: _buildMiniInfo(
-                              'VÉHICULE',
-                              'Fourgonnette #04',
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildMiniInfo(
-                              'CRÉNEAU',
-                              '08:00 - 12:00',
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: _buildMiniInfo(
-                              'STATUT BL',
-                              'VALIDÉ',
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-                // ── Tableau des Articles ─────────────────────────────────────
-                const Text(
-                  'DÉTAIL DES ARTICLES COMMANDÉS',
-                  style: TextStyle(
-                    color: AppColors.textPrimary,
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.6,
-                  ),
-                ),
-                const SizedBox(height: 8),
-
-                // Header Tableau
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 7,
-                  ),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFE2E8F0),
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(4),
-                      topRight: Radius.circular(4),
-                    ),
-                  ),
+                  color: const Color(0xFFF1F5F9),
+                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
                   child: Row(
                     children: const [
                       SizedBox(
-                        width: 20,
+                        width: 70,
                         child: Text(
-                          'N°',
-                          style: TextStyle(
-                            fontSize: 9.5,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
-                          ),
+                          'Code Produit',
+                          style: TextStyle(fontSize: 7.5, fontWeight: FontWeight.w800),
                         ),
                       ),
                       Expanded(
                         flex: 5,
                         child: Text(
-                          'Désignation / Article',
-                          style: TextStyle(
-                            fontSize: 9.5,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
-                          ),
+                          'Désignation',
+                          style: TextStyle(fontSize: 7.5, fontWeight: FontWeight.w800),
                         ),
                       ),
-                      Expanded(
-                        flex: 2,
-                        child: Text(
-                          'Qté',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 9.5,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        flex: 2,
-                        child: Text(
-                          'Poids',
-                          textAlign: TextAlign.right,
-                          style: TextStyle(
-                            fontSize: 9.5,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: 6),
                       SizedBox(
-                        width: 48,
+                        width: 30,
                         child: Text(
-                          'Contrôle',
+                          'Qté LIV',
                           textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 9.5,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary,
-                          ),
+                          style: TextStyle(fontSize: 7.5, fontWeight: FontWeight.w800),
+                        ),
+                      ),
+                      SizedBox(
+                        width: 45,
+                        child: Text(
+                          'N° série',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 7.5, fontWeight: FontWeight.w800),
+                        ),
+                      ),
+                      SizedBox(
+                        width: 55,
+                        child: Text(
+                          'Prix HT',
+                          textAlign: TextAlign.right,
+                          style: TextStyle(fontSize: 7.5, fontWeight: FontWeight.w800),
+                        ),
+                      ),
+                      SizedBox(
+                        width: 55,
+                        child: Text(
+                          'MONTANT',
+                          textAlign: TextAlign.right,
+                          style: TextStyle(fontSize: 7.5, fontWeight: FontWeight.w800),
+                        ),
+                      ),
+                      SizedBox(
+                        width: 14,
+                        child: Text(
+                          'T',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 7.5, fontWeight: FontWeight.w800),
+                        ),
+                      ),
+                      SizedBox(
+                        width: 14,
+                        child: Text(
+                          'A',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 7.5, fontWeight: FontWeight.w800),
                         ),
                       ),
                     ],
                   ),
                 ),
+                const Divider(height: 1, thickness: 1, color: Colors.black87),
 
-                // Lignes d'articles
-                _buildTableRow(
-                  '1',
-                  'Carton Marchandises Réf. LDF-A400',
-                  '2 colis',
-                  '250 kg',
-                  isEven: false,
-                ),
-                _buildTableRow(
-                  '2',
-                  'Palette de Matériaux B',
-                  '1 palette',
-                  '500 kg',
-                  isEven: true,
-                ),
-                _buildTableRow(
-                  '3',
-                  'Colis Fournitures C',
-                  '3 paquets',
-                  '150 kg',
-                  isEven: false,
-                ),
-
-                // ── Totaux du BL (Adaptatif) ─────────────────────────────────
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF1F5F9),
-                    borderRadius: const BorderRadius.only(
-                      bottomLeft: Radius.circular(4),
-                      bottomRight: Radius.circular(4),
-                    ),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Row(
-                          children: const [
-                            Icon(
-                              AppIcons.packageCheck,
-                              size: 14,
-                              color: AppColors.primary,
-                            ),
-                            SizedBox(width: 5),
-                            Expanded(
-                              child: Text(
-                                'TOTAL : 3 lig. / 6 unit.',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.textPrimary,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
+                // Lignes réelles des articles
+                ...items.map((it) => Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 5),
+                      decoration: const BoxDecoration(
+                        border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
                       ),
-                      Text(
-                        'POIDS TOTAL : $weight',
-                        style: const TextStyle(
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.primaryDark,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 14),
-
-                // ── Observations & Mentions légales ──────────────────────────
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFFFBEB),
-                    borderRadius: BorderRadius.circular(4),
-                    border: Border.all(color: const Color(0xFFFDE68A)),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
-                      Text(
-                        'OBSERVATIONS & CONDITIONS DE RÉCEPTION :',
-                        style: TextStyle(
-                          fontSize: 8.5,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF92400E),
-                        ),
-                      ),
-                      SizedBox(height: 2),
-                      Text(
-                        'Marchandise livrée sous réserve de vérification de conformité. Les réclamations doivent être formulées sous 48h auprès de LdF Groupe.',
-                        style: TextStyle(
-                          fontSize: 8.5,
-                          color: Color(0xFF78350F),
-                          height: 1.25,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 18),
-
-                // ── Bloc Signatures & Cachet Officiel ────────────────────────
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Signature Livreur
-                    Expanded(
-                      child: Container(
-                        height: 90,
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: const Color(0xFFCBD5E1),
-                            style: BorderStyle.solid,
-                          ),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'VISA LIVREUR / LOGISTIQUE',
-                              style: TextStyle(
-                                fontSize: 8,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                            const Spacer(),
-                            Center(
-                              child: Text(
-                                'Signé numériquement\nLdF Mobile ID: #023',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  fontSize: 8,
-                                  fontStyle: FontStyle.italic,
-                                  color: AppColors.textSecondary.withValues(
-                                    alpha: 0.8,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const Spacer(),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-
-                    // Signature & Cachet Client
-                    Expanded(
-                      child: Container(
-                        height: 90,
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: const Color(0xFFCBD5E1),
-                            style: BorderStyle.solid,
-                          ),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Stack(
-                          children: [
-                            Column(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(
+                            width: 70,
+                            child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
-                              children: const [
+                              children: [
                                 Text(
-                                  'CACHET & SIGNATURE CLIENT',
-                                  style: TextStyle(
+                                  it.productCode,
+                                  style: const TextStyle(
                                     fontSize: 8,
                                     fontWeight: FontWeight.w700,
-                                    color: AppColors.textSecondary,
+                                    fontFamily: 'monospace',
                                   ),
                                 ),
-                                Spacer(),
-                                Center(
-                                  child: Text(
-                                    'Nom du réceptionnaire :',
-                                    style: TextStyle(
-                                      fontSize: 8,
-                                      color: AppColors.textSecondary,
+                                if (it.barcode != null && it.barcode!.isNotEmpty)
+                                  Text(
+                                    it.barcode!,
+                                    style: const TextStyle(
+                                      fontSize: 6.5,
+                                      color: Colors.black54,
+                                      fontFamily: 'monospace',
                                     ),
                                   ),
-                                ),
-                                Spacer(),
                               ],
                             ),
-
-                            // Tampon officiel vert en filigrane
-                            Positioned(
-                              right: 0,
-                              bottom: 0,
-                              child: Transform.rotate(
-                                angle: -0.15,
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 5,
-                                    vertical: 2,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    border: Border.all(
-                                      color: AppColors.success,
-                                      width: 1.2,
-                                    ),
-                                    borderRadius: BorderRadius.circular(4),
-                                  ),
-                                  child: const Text(
-                                    'CONFORME\nLDF LIVRAISON',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      color: AppColors.success,
-                                      fontSize: 7,
-                                      fontWeight: FontWeight.w900,
-                                      letterSpacing: 0.4,
-                                    ),
-                                  ),
-                                ),
+                          ),
+                          Expanded(
+                            flex: 5,
+                            child: Text(
+                              it.designation,
+                              style: const TextStyle(
+                                fontSize: 8,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
-                          ],
-                        ),
+                          ),
+                          SizedBox(
+                            width: 30,
+                            child: Text(
+                              it.quantity.toString(),
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                fontSize: 8,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                          SizedBox(
+                            width: 45,
+                            child: Text(
+                              it.serialNumber ?? '',
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(fontSize: 7.5),
+                            ),
+                          ),
+                          SizedBox(
+                            width: 55,
+                            child: Text(
+                              NumberFormat('#,##0.00', 'fr_FR').format(it.unitPriceHt),
+                              textAlign: TextAlign.right,
+                              style: const TextStyle(fontSize: 7.5, fontFamily: 'monospace'),
+                            ),
+                          ),
+                          SizedBox(
+                            width: 55,
+                            child: Text(
+                              NumberFormat('#,##0.00', 'fr_FR').format(it.totalPriceHt),
+                              textAlign: TextAlign.right,
+                              style: const TextStyle(
+                                fontSize: 7.5,
+                                fontWeight: FontWeight.w700,
+                                fontFamily: 'monospace',
+                              ),
+                            ),
+                          ),
+                          SizedBox(
+                            width: 14,
+                            child: Text(
+                              it.taxCode,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(fontSize: 7.5),
+                            ),
+                          ),
+                          SizedBox(
+                            width: 14,
+                            child: Text(
+                              it.arsiCode,
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(fontSize: 7.5),
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
-                ),
+                    )),
+              ],
+            ),
+          ),
 
-                const SizedBox(height: 14),
+          const SizedBox(height: 6),
 
-                // Code-barres simulé en bas
-                Center(
+          // ── Mention / Observation sous le tableau ──────────────────────────
+          Text(
+            regulObs,
+            style: const TextStyle(
+              fontSize: 8.5,
+              fontWeight: FontWeight.w800,
+              fontStyle: FontStyle.italic,
+              color: Colors.black87,
+            ),
+          ),
+
+          const SizedBox(height: 8),
+
+          // ── Bloc Récapitulatif : TAXES & TOTAUX ─────────────────────────────
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Grille TAXES
+              Expanded(
+                flex: 5,
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.black87, width: 0.8),
+                  ),
                   child: Column(
                     children: [
                       Container(
-                        height: 22,
-                        width: 180,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFF1F5F9),
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: List.generate(
-                            28,
-                            (index) => Container(
-                              width: (index % 3 == 0) ? 3 : (index % 2 == 0 ? 1 : 2),
-                              color: Colors.black87,
-                            ),
-                          ),
+                        color: const Color(0xFFF1F5F9),
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 2),
+                        child: const Text(
+                          'TAXES',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 7.5, fontWeight: FontWeight.w800),
                         ),
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        '*$blNumber*',
-                        style: const TextStyle(
-                          fontSize: 8.5,
-                          letterSpacing: 2,
-                          color: AppColors.textSecondary,
+                      const Divider(height: 1, thickness: 0.8, color: Colors.black87),
+                      Padding(
+                        padding: const EdgeInsets.all(4),
+                        child: Column(
+                          children: [
+                            _buildTaxLine('Code TVA : 1', 'ARSI : 1', 'Code ARSI : 2'),
+                            _buildTaxLine('Taux : 18 %', 'Taux : 5%', 'Taux : 2%'),
+                            _buildTaxLine(
+                              'Base : ${NumberFormat('#,##0', 'fr_FR').format(montantHt)}',
+                              'Base : 0',
+                              'Base : 0',
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
                 ),
-              ],
+              ),
+
+              const SizedBox(width: 8),
+
+              // Grille TOTAUX & NET À PAYER
+              Expanded(
+                flex: 6,
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.black87, width: 0.8),
+                  ),
+                  child: Column(
+                    children: [
+                      Container(
+                        color: const Color(0xFFF1F5F9),
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: const [
+                            Expanded(
+                              child: Text(
+                                'MONTANT HT CUMULE',
+                                style: TextStyle(fontSize: 6.5, fontWeight: FontWeight.w800),
+                              ),
+                            ),
+                            Expanded(
+                              child: Text(
+                                'Total TVA',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(fontSize: 6.5, fontWeight: FontWeight.w800),
+                              ),
+                            ),
+                            Expanded(
+                              child: Text(
+                                'MONTANT TTC',
+                                textAlign: TextAlign.right,
+                                style: TextStyle(fontSize: 6.5, fontWeight: FontWeight.w800),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Divider(height: 1, thickness: 0.8, color: Colors.black87),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                NumberFormat('#,##0', 'fr_FR').format(montantHt),
+                                style: const TextStyle(
+                                  fontSize: 8,
+                                  fontWeight: FontWeight.w700,
+                                  fontFamily: 'monospace',
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              child: Text(
+                                NumberFormat('#,##0', 'fr_FR').format(totalTva),
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  fontSize: 8,
+                                  fontWeight: FontWeight.w700,
+                                  fontFamily: 'monospace',
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              child: Text(
+                                NumberFormat('#,##0', 'fr_FR').format(montantTtc),
+                                textAlign: TextAlign.right,
+                                style: const TextStyle(
+                                  fontSize: 8,
+                                  fontWeight: FontWeight.w800,
+                                  fontFamily: 'monospace',
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Divider(height: 1, thickness: 0.8, color: Colors.black87),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                        color: const Color(0xFFFFFBEB),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'NET A PAYER :',
+                              style: TextStyle(
+                                fontSize: 8.5,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                            Text(
+                              '${NumberFormat('#,##0', 'fr_FR').format(netAPayer)} FCFA',
+                              style: const TextStyle(
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.w900,
+                                color: AppColors.primaryDark,
+                                fontFamily: 'monospace',
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 14),
+
+          // ── Bloc Émargement & Signatures numériques ─────────────────────────
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Visa Livreur
+              Expanded(
+                child: Container(
+                  height: 85,
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: const Color(0xFFCBD5E1)),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'VISA LIVREUR / LOGISTIQUE',
+                        style: TextStyle(
+                          fontSize: 7.5,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      const Spacer(),
+                      Center(
+                        child: Text(
+                          'Signé numériquement\n$chauffeur',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 7.5,
+                            fontStyle: FontStyle.italic,
+                            color: AppColors.textSecondary.withValues(alpha: 0.8),
+                          ),
+                        ),
+                      ),
+                      const Spacer(),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(width: 8),
+
+              // Cachet & Signature Client tactile
+              Expanded(
+                child: Container(
+                  height: 85,
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: const Color(0xFFCBD5E1)),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Stack(
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'CACHET & SIGNATURE CLIENT',
+                            style: TextStyle(
+                              fontSize: 7.5,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          if (signedBy != null && signedBy.isNotEmpty)
+                            Text(
+                              'Réceptionnaire : $signedBy',
+                              style: const TextStyle(
+                                fontSize: 7,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textPrimary,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          const Spacer(),
+                          if (signatureData == null || signatureData.isEmpty)
+                            Center(
+                              child: Text(
+                                delivery?.status == DeliveryStatus.delivered
+                                    ? 'Validé directement\n(Visa numérique)'
+                                    : 'En attente de réception\net signature client',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 7,
+                                  fontStyle: FontStyle.italic,
+                                  color: AppColors.textSecondary.withValues(alpha: 0.7),
+                                ),
+                              ),
+                            ),
+                          const Spacer(),
+                        ],
+                      ),
+                      if (signatureData != null && signatureData.isNotEmpty)
+                        Positioned.fill(
+                          child: Padding(
+                            padding: const EdgeInsets.only(top: 14, bottom: 2, right: 20),
+                            child: SignatureViewer(
+                              signatureData: signatureData,
+                              strokeColor: const Color(0xFF0F2F64),
+                              strokeWidth: 1.6,
+                            ),
+                          ),
+                        ),
+                      if (delivery?.status == DeliveryStatus.delivered)
+                        Positioned(
+                          right: 0,
+                          bottom: 0,
+                          child: Transform.rotate(
+                            angle: -0.12,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                              decoration: BoxDecoration(
+                                border: Border.all(color: AppColors.success, width: 1.2),
+                                borderRadius: BorderRadius.circular(3),
+                              ),
+                              child: const Text(
+                                'ÉMARGÉ\nLDF DIGITAL',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: AppColors.success,
+                                  fontSize: 6.5,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMetaLine(String label, String value, {bool boldVal = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 0.8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 78,
+            child: Text(
+              '$label :',
+              style: const TextStyle(
+                fontSize: 8,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: 8,
+                fontWeight: boldVal ? FontWeight.w800 : FontWeight.w500,
+                color: Colors.black87,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],
@@ -959,123 +986,27 @@ class _DeliveryNoteScreenState extends State<DeliveryNoteScreen> {
     );
   }
 
-  Widget _buildMiniInfo(String label, String val) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            color: AppColors.primaryDark,
-            fontSize: 7.5,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-        const SizedBox(height: 1),
-        Text(
-          val,
-          style: const TextStyle(
-            color: AppColors.textPrimary,
-            fontSize: 9,
-            fontWeight: FontWeight.w600,
-          ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTableRow(
-    String num,
-    String name,
-    String qte,
-    String poids, {
-    required bool isEven,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
-      decoration: BoxDecoration(
-        color: isEven ? const Color(0xFFF8FAFC) : Colors.white,
-        border: const Border(
-          left: BorderSide(color: Color(0xFFE2E8F0)),
-          right: BorderSide(color: Color(0xFFE2E8F0)),
-          bottom: BorderSide(color: Color(0xFFE2E8F0)),
-        ),
-      ),
+  Widget _buildTaxLine(String col1, String col2, String col3) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 1),
       child: Row(
         children: [
-          SizedBox(
-            width: 20,
+          Expanded(
             child: Text(
-              num,
-              style: const TextStyle(
-                fontSize: 9.5,
-                color: AppColors.textSecondary,
-              ),
+              col1,
+              style: const TextStyle(fontSize: 6.5, fontFamily: 'monospace'),
             ),
           ),
           Expanded(
-            flex: 5,
             child: Text(
-              name,
-              style: const TextStyle(
-                fontSize: 9.5,
-                fontWeight: FontWeight.w500,
-                color: AppColors.textPrimary,
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
+              col2,
+              style: const TextStyle(fontSize: 6.5, fontFamily: 'monospace'),
             ),
           ),
           Expanded(
-            flex: 2,
             child: Text(
-              qte,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 9.5,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-              ),
-            ),
-          ),
-          Expanded(
-            flex: 2,
-            child: Text(
-              poids,
-              textAlign: TextAlign.right,
-              style: const TextStyle(
-                fontSize: 9.5,
-                color: AppColors.textSecondary,
-              ),
-            ),
-          ),
-          const SizedBox(width: 6),
-          Container(
-            width: 48,
-            alignment: Alignment.center,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-              decoration: BoxDecoration(
-                color: AppColors.successSoft,
-                borderRadius: BorderRadius.circular(3),
-              ),
-              child: const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(AppIcons.check, size: 8, color: AppColors.success),
-                  SizedBox(width: 2),
-                  Text(
-                    'OK',
-                    style: TextStyle(
-                      fontSize: 8,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.success,
-                    ),
-                  ),
-                ],
-              ),
+              col3,
+              style: const TextStyle(fontSize: 6.5, fontFamily: 'monospace'),
             ),
           ),
         ],

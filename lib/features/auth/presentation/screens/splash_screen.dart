@@ -38,10 +38,16 @@ class _SplashScreenState extends State<SplashScreen>
 
     _controller.forward().then((_) {
       if (mounted) {
-        final isAuthenticated = getIt<TokenManager>().isAuthenticated;
-        if (isAuthenticated) {
+        final tokenManager = getIt<TokenManager>();
+        final isAuthenticated = tokenManager.isAuthenticated;
+        final hasTenant = tokenManager.hasTenantClaim;
+
+        if (isAuthenticated && hasTenant) {
           context.go('/dashboard');
         } else {
+          if (isAuthenticated && !hasTenant) {
+            tokenManager.clearSession();
+          }
           context.go('/login');
         }
       }
@@ -73,9 +79,9 @@ class _SplashScreenState extends State<SplashScreen>
                   ClipRRect(
                     borderRadius: BorderRadius.circular(28),
                     child: Image.asset(
-                      'assets/logo/ldfgroupe-icon-app.webp',
-                      width: 110,
-                      height: 110,
+                      'assets/images/ldf_logo.png',
+                      width: 200,
+                      height: 200,
                       fit: BoxFit.cover,
                     ),
                   ),

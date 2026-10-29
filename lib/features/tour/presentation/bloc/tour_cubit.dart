@@ -14,8 +14,13 @@ class TourCubit extends Cubit<TourState> {
   TourCubit(this.getToursUseCase) : super(TourInitial());
 
   Future<void> fetchTours() async {
+    if (isClosed) return;
     emit(TourLoading());
+
     final result = await getToursUseCase();
+
+    if (isClosed) return;
+
     result.fold(
       (error) => emit(TourError(error)),
       (tours) => emit(TourLoaded(tours)),

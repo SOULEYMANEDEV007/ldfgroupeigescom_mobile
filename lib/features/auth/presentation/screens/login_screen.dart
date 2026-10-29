@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/config/app_config.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_gradients.dart';
 import '../../../../core/constants/app_icons.dart';
@@ -30,18 +31,15 @@ class LoginView extends StatefulWidget {
 
 class _LoginViewState extends State<LoginView> {
   final _formKey = GlobalKey<FormState>();
-  final _matriculeController = TextEditingController(text: 'LDF-999');
-  final _passwordController = TextEditingController(text: '123');
+  // Identifiants de démo préremplis uniquement en mode mock (USE_MOCK_API=true)
+  final _usernameController = TextEditingController(
+    text: AppConfig.useMockApi ? 'LDF-999' : '',
+  );
+  final _passwordController = TextEditingController(
+    text: AppConfig.useMockApi ? '123' : '',
+  );
 
   bool _isPasswordVisible = false;
-  String? _selectedAgence;
-
-  final List<String> _agences = [
-    'LDF-Plateau',
-    'LDF-Cocody',
-    'LDF-Yopougon',
-    'LDF-Koumassi',
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -50,7 +48,11 @@ class _LoginViewState extends State<LoginView> {
       body: BlocConsumer<LoginBloc, LoginState>(
         listener: (context, state) {
           if (state is LoginFailure) {
-            AppFeedback.error(context, state.message);
+            AppFeedback.error(
+              context,
+              state.message,
+              title: 'Connexion impossible',
+            );
           } else if (state is LoginSuccess) {
             context.go('/dashboard');
           }
@@ -70,7 +72,7 @@ class _LoginViewState extends State<LoginView> {
                         ClipRRect(
                           borderRadius: BorderRadius.circular(22),
                           child: Image.asset(
-                            'assets/logo/ldfgroupe-icon-app.webp',
+                            'assets/images/ldf_logo.png',
                             width: 80,
                             height: 80,
                             fit: BoxFit.cover,
@@ -78,7 +80,7 @@ class _LoginViewState extends State<LoginView> {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          'Igescom Mobile',
+                          'Igescom+',
                           style: Theme.of(context).textTheme.titleLarge
                               ?.copyWith(
                                 color: AppColors.primaryDark,
@@ -131,19 +133,21 @@ class _LoginViewState extends State<LoginView> {
                           ),
                           const SizedBox(height: 28),
 
-                          // ── Matricule ─────────────────────────────────────
+                          // ── Identifiant ─────────────────────────────────────
                           TextFormField(
-                            controller: _matriculeController,
+                            controller: _usernameController,
                             keyboardType: TextInputType.text,
-                            textCapitalization: TextCapitalization.characters,
+                            textInputAction: TextInputAction.next,
+                            autocorrect: false,
+                            enableSuggestions: false,
                             decoration: const InputDecoration(
-                              labelText: 'Matricule *',
-                              hintText: 'Ex : LDF-023',
-                              prefixIcon: Icon(AppIcons.badge),
+                              labelText: 'Identifiant *',
+                              hintText: 'Votre identifiant',
+                              prefixIcon: Icon(AppIcons.person),
                             ),
                             validator: (value) {
                               if (value == null || value.trim().isEmpty) {
-                                return 'Le matricule est requis';
+                                return "L'identifiant est requis";
                               }
                               return null;
                             },
@@ -166,7 +170,8 @@ class _LoginViewState extends State<LoginView> {
                                   size: 20,
                                 ),
                                 onPressed: () => setState(
-                                  () => _isPasswordVisible = !_isPasswordVisible,
+                                  () =>
+                                      _isPasswordVisible = !_isPasswordVisible,
                                 ),
                               ),
                             ),
@@ -177,37 +182,8 @@ class _LoginViewState extends State<LoginView> {
                               return null;
                             },
                           ),
-                          const SizedBox(height: 16),
-
-                          // ── Agence (Dropdown) ──────────────────────────────
-                          DropdownButtonFormField<String>(
-                            decoration: const InputDecoration(
-                              labelText: 'Agence *',
-                              prefixIcon: Icon(AppIcons.building),
-                            ),
-                            initialValue: _selectedAgence,
-                            hint: const Text('Sélectionnez votre agence'),
-                            items: _agences.map((agence) {
-                              return DropdownMenuItem<String>(
-                                value: agence,
-                                child: Text(agence),
-                              );
-                            }).toList(),
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Veuillez sélectionner une agence';
-                              }
-                              return null;
-                            },
-                            onChanged: (value) {
-                              setState(() {
-                                _selectedAgence = value;
-                              });
-                            },
-                          ),
-
                           const SizedBox(height: 10),
-                          Align(
+                          /*Align(
                             alignment: Alignment.centerRight,
                             child: TextButton(
                               onPressed: () {
@@ -225,7 +201,7 @@ class _LoginViewState extends State<LoginView> {
                                 ),
                               ),
                             ),
-                          ),
+                          ),*/
 
                           const SizedBox(height: 24),
 
@@ -237,8 +213,7 @@ class _LoginViewState extends State<LoginView> {
                                     if (_formKey.currentState!.validate()) {
                                       context.read<LoginBloc>().add(
                                         LoginSubmitted(
-                                          _matriculeController.text.trim(),
-                                          _selectedAgence ?? '',
+                                          _usernameController.text.trim(),
                                           _passwordController.text,
                                         ),
                                       );
@@ -262,7 +237,7 @@ class _LoginViewState extends State<LoginView> {
 
                           Center(
                             child: Text(
-                              '© LdF Groupe CI — Igescom v1.0',
+                              '© LdF Groupe — Igescom v1.0',
                               style: Theme.of(
                                 context,
                               ).textTheme.bodyMedium?.copyWith(fontSize: 11),
@@ -283,7 +258,7 @@ class _LoginViewState extends State<LoginView> {
 
   @override
   void dispose() {
-    _matriculeController.dispose();
+    _usernameController.dispose();
     _passwordController.dispose();
     super.dispose();
   }

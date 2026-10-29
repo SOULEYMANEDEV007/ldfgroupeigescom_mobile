@@ -10,10 +10,14 @@ import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_gradients.dart';
 import '../../../../core/constants/app_icons.dart';
 import '../../../../core/di/injection.dart';
+import '../../../../core/utils/app_dialogs.dart';
 import '../../../../core/utils/app_feedback.dart';
 import '../../../../core/services/location_service.dart';
 import '../../domain/entities/delivery.dart';
 import '../bloc/delivery_cubit.dart';
+import '../../../../core/widgets/ldf_pattern_background.dart';
+import '../../../tour/data/datasources/tour_local_data_source.dart';
+import '../widgets/signature_pad_dialog.dart';
 
 const _defaultLatLng = LatLng(5.3600, -4.0083); // Abidjan, Côte d'Ivoire
 
@@ -39,163 +43,228 @@ class _DeliveryDetailView extends StatelessWidget {
     return BlocListener<DeliveryCubit, DeliveryState>(
       listener: (context, state) {
         if (state is DeliveryUpdated) {
-          AppFeedback.success(context, 'Tournée démarrée !');
-          context.pop();
+          final isDelivered = state.delivery.status == DeliveryStatus.delivered;
+          final isOffline = getIt<TourLocalDataSource>().isPendingSync(
+            state.delivery.id,
+          );
+
+          final String title;
+          final String message;
+
+          if (isDelivered) {
+            title = isOffline
+                ? 'Enregistrée hors-ligne'
+                : 'Livraison confirmée';
+            message = isOffline
+                ? 'Livraison enregistrée en local (mode hors-ligne).\nElle sera synchronisée dès le retour du réseau.'
+                : 'Livraison confirmée avec succès';
+          } else {
+            title = 'Livraison reportée';
+            message = 'Le report de la livraison a été enregistré avec succès.';
+          }
+
+          // Le retour à l'écran précédent se fait APRÈS fermeture du popup.
+          AppFeedback.success(context, message, title: title).then((_) {
+            if (context.mounted) context.pop(state.delivery);
+          });
         }
         if (state is DeliveryError) {
-          AppFeedback.error(context, state.message);
+          AppFeedback.error(
+            context,
+            state.message,
+            title: 'Opération impossible',
+          );
         }
       },
-      child: Scaffold(
-        backgroundColor: AppColors.background,
-        body: Column(
-          children: [
-            _DeliveryHeader(delivery: delivery),
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // ── Timeline de suivi ────────────────────────────
-                    const SizedBox(height: 10),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: _sectionLabel('Suivi de la livraison'),
-                    ),
-                    const SizedBox(height: 10),
-                    _CompactTimeline(status: delivery.status),
-                    _MapSection(delivery: delivery),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _sectionLabel('Détails de la livraison'),
-                          const SizedBox(height: 10),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _KpiCard(
-                                  icon: AppIcons.clock,
-                                  iconColor: AppColors.accentBlue,
-                                  iconBgColor: AppColors.accentBlueSoft,
-                                  label: 'Heure prévue',
-                                  value: DateFormat(
-                                    'HH:mm',
-                                  ).format(delivery.scheduledTime),
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: _KpiCard(
-                                  icon: AppIcons.receipt,
-                                  iconColor: AppColors.primary,
-                                  iconBgColor: AppColors.primarySoft,
-                                  label: 'N° BL',
-                                  value: delivery.deliveryNoteNumber,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 10),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: _KpiCard(
-                                  icon: AppIcons.scale,
-                                  iconColor: AppColors.warning,
-                                  iconBgColor: AppColors.warningSoft,
-                                  label: 'Volume/Poids',
-                                  value: '${delivery.weight} kg',
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: _KpiCard(
-                                  icon: AppIcons.wallet,
-                                  iconColor: AppColors.success,
-                                  iconBgColor: AppColors.successSoft,
-                                  label: 'Montant',
-                                  value: NumberFormat.currency(
-                                    locale: 'fr_FR',
-                                    symbol: 'FCFA',
-                                    decimalDigits: 0,
-                                  ).format(delivery.amount),
-                                ),
-                              ),
-                            ],
-                          ),
-
-                          if (delivery.notes.isNotEmpty) ...[
-                            const SizedBox(height: 16),
-                            _sectionLabel('Notes du client'),
-                            const SizedBox(height: 8),
-                            Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(14),
-                              decoration: BoxDecoration(
-                                color: Colors.amber.withAlpha(20),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: Colors.amber.withAlpha(80),
-                                ),
-                              ),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Icon(
-                                    AppIcons.note,
-                                    color: Colors.amber,
-                                    size: 18,
+      child: LdfPatternBackground(
+        child: Scaffold(
+          //backgroundColor: AppColors.background,
+          backgroundColor: Colors.transparent,
+          body: Column(
+            children: [
+              _DeliveryHeader(delivery: delivery),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // ── Timeline de suivi ────────────────────────────
+                      const SizedBox(height: 10),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: _sectionLabel('Suivi de la livraison'),
+                      ),
+                      const SizedBox(height: 10),
+                      _CompactTimeline(
+                        status: delivery.status,
+                        scheduledTime: delivery.scheduledTime,
+                      ),
+                      _MapSection(delivery: delivery),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _sectionLabel('Détails de la livraison'),
+                            const SizedBox(height: 10),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _KpiCard(
+                                    icon: AppIcons.clock,
+                                    iconColor: AppColors.accentBlue,
+                                    iconBgColor: AppColors.accentBlueSoft,
+                                    label:
+                                        delivery.status ==
+                                            DeliveryStatus.delivered
+                                        ? 'Livré le'
+                                        : (delivery.status ==
+                                                  DeliveryStatus.cancelled
+                                              ? 'Reprogrammé le'
+                                              : 'Date prévue'),
+                                    value: DateFormat(
+                                      'dd/MM/yyyy · HH:mm',
+                                    ).format(delivery.scheduledTime),
                                   ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Text(
-                                      delivery.notes,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodyMedium
-                                          ?.copyWith(height: 1.5),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: _KpiCard(
+                                    icon: AppIcons.receipt,
+                                    iconColor: AppColors.primary,
+                                    iconBgColor: AppColors.primarySoft,
+                                    label: 'N° BL',
+                                    value: delivery.deliveryNoteNumber,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _KpiCard(
+                                    icon: AppIcons.scale,
+                                    iconColor: AppColors.warning,
+                                    iconBgColor: AppColors.warningSoft,
+                                    label: 'Volume/Poids',
+                                    value: '${delivery.weight} kg',
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: _KpiCard(
+                                    icon: AppIcons.wallet,
+                                    iconColor: AppColors.success,
+                                    iconBgColor: AppColors.successSoft,
+                                    label: 'Montant',
+                                    value: NumberFormat.currency(
+                                      locale: 'fr_FR',
+                                      symbol: 'FCFA',
+                                      decimalDigits: 0,
+                                    ).format(delivery.amount),
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            if (delivery.notes.isNotEmpty) ...[
+                              const SizedBox(height: 16),
+                              _sectionLabel('Notes du client'),
+                              const SizedBox(height: 8),
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(14),
+                                decoration: BoxDecoration(
+                                  color: Colors.amber.withAlpha(20),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: Colors.amber.withAlpha(80),
+                                  ),
+                                ),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Icon(
+                                      AppIcons.note,
+                                      color: Colors.amber,
+                                      size: 18,
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Text(
+                                        delivery.notes,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium
+                                            ?.copyWith(height: 1.5),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                            const SizedBox(height: 16),
+                            SizedBox(
+                              width: double.infinity,
+                              child: OutlinedButton.icon(
+                                onPressed: () => context.push(
+                                  '/delivery-note',
+                                  extra: delivery,
+                                ),
+                                icon: const Icon(AppIcons.pdf, size: 18),
+                                label: const Text('Voir le Bon de Livraison'),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: AppColors.primary,
+                                  side: const BorderSide(
+                                    color: AppColors.primary,
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 14,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            if (delivery.status !=
+                                DeliveryStatus.delivered) ...[
+                              const SizedBox(height: 8),
+                              SizedBox(
+                                width: double.infinity,
+                                child: TextButton.icon(
+                                  onPressed: () => _showValidationChoiceModal(
+                                    context,
+                                    delivery,
+                                  ),
+                                  icon: const Icon(
+                                    AppIcons.edit,
+                                    size: 16,
+                                    color: AppColors.primary,
+                                  ),
+                                  label: const Text(
+                                    'Démarrer l\'émargement tactile ✍️ (Démo V2)',
+                                    style: TextStyle(
+                                      color: AppColors.primary,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 12.5,
                                     ),
                                   ),
-                                ],
+                                ),
                               ),
-                            ),
+                            ],
+                            const SizedBox(height: 20),
                           ],
-                          const SizedBox(height: 16),
-                          SizedBox(
-                            width: double.infinity,
-                            child: OutlinedButton.icon(
-                              onPressed: () => context.push(
-                                '/delivery-note',
-                                extra: delivery,
-                              ),
-                              icon: const Icon(AppIcons.pdf, size: 18),
-                              label: const Text('Voir le Bon de Livraison'),
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: AppColors.primary,
-                                side: const BorderSide(
-                                  color: AppColors.primary,
-                                ),
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 14,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-                        ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
-            _StickyActionBar(delivery: delivery),
-          ],
+              _StickyActionBar(delivery: delivery),
+            ],
+          ),
         ),
       ),
     );
@@ -205,8 +274,8 @@ class _DeliveryDetailView extends StatelessWidget {
     label.toUpperCase(),
     style: const TextStyle(
       color: AppColors.textSecondary,
-      fontWeight: FontWeight.bold,
-      fontSize: 11,
+      fontWeight: FontWeight.w800,
+      fontSize: 13,
       letterSpacing: 1.2,
     ),
   );
@@ -236,16 +305,9 @@ class _DeliveryHeader extends StatelessWidget {
             children: [
               IconButton(
                 onPressed: () => context.pop(),
-                icon: const Icon(
-                  AppIcons.back,
-                  color: Colors.white,
-                  size: 22,
-                ),
+                icon: const Icon(AppIcons.back, color: Colors.white, size: 22),
                 padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(
-                  minWidth: 40,
-                  minHeight: 40,
-                ),
+                constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
               ),
               const SizedBox(width: 8),
               Expanded(
@@ -277,7 +339,7 @@ class _DeliveryHeader extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              GestureDetector(
+              /*GestureDetector(
                 onTap: () {
                   // TODO: url_launcher tel:${delivery.phone}
                 },
@@ -293,7 +355,7 @@ class _DeliveryHeader extends StatelessWidget {
                     color: AppColors.primaryDark,
                   ),
                 ),
-              ),
+              ),*/
             ],
           ),
         ),
@@ -313,6 +375,7 @@ class _MapSection extends StatefulWidget {
 
 class _MapSectionState extends State<_MapSection> {
   final _locationService = getIt<LocationService>();
+  final MapController _mapController = MapController();
   Position? _currentPosition;
   bool _isLoadingLocation = false;
   String? _locationError;
@@ -336,6 +399,12 @@ class _MapSectionState extends State<_MapSection> {
           _currentPosition = position;
           _isLoadingLocation = false;
         });
+
+        // Zoom ou Déplacer la caméra sur la vraie position
+        _mapController.move(
+          LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+          15.5,
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -372,9 +441,10 @@ class _MapSectionState extends State<_MapSection> {
       child: Stack(
         children: [
           FlutterMap(
+            mapController: _mapController,
             options: MapOptions(
               initialCenter: point,
-              initialZoom: 14.5,
+              initialZoom: 15.0,
               interactionOptions: const InteractionOptions(
                 flags: InteractiveFlag.pinchZoom | InteractiveFlag.drag,
               ),
@@ -382,6 +452,8 @@ class _MapSectionState extends State<_MapSection> {
             children: [
               TileLayer(
                 urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                //urlTemplate:
+                //'https://basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png',
                 userAgentPackageName: 'com.ldf.igescom_mobile',
               ),
               MarkerLayer(
@@ -430,11 +502,7 @@ class _MapSectionState extends State<_MapSection> {
               top: 8,
               right: 8,
               child: IconButton(
-                icon: Icon(
-                  AppIcons.refresh,
-                  color: AppColors.error,
-                  size: 20,
-                ),
+                icon: Icon(AppIcons.refresh, color: AppColors.error, size: 20),
                 onPressed: _getCurrentLocation,
                 style: IconButton.styleFrom(
                   backgroundColor: Colors.white,
@@ -536,15 +604,17 @@ class _KpiCard extends StatelessWidget {
             label,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: AppColors.textSecondary,
-              fontWeight: FontWeight.w500,
+              fontWeight: FontWeight.w700,
+              fontSize: 13,
             ),
           ),
           const SizedBox(height: 3),
           Text(
             value,
-            style: Theme.of(
-              context,
-            ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w800,
+              fontSize: 15.5,
+            ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
@@ -552,6 +622,354 @@ class _KpiCard extends StatelessWidget {
       ),
     );
   }
+}
+
+Future<void> _showReprogramDialog(
+  BuildContext context,
+  Delivery delivery,
+) async {
+  final reasonController = TextEditingController();
+  final formKey = GlobalKey<FormState>();
+
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (dialogCtx) => AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+      contentPadding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
+      actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      title: Row(
+        children: const [
+          Icon(AppIcons.clock, color: AppColors.warning, size: 20),
+          SizedBox(width: 8),
+          Text(
+            'Reprogrammer la livraison',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+        ],
+      ),
+      content: Form(
+        key: formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Indiquez le motif du report pour le bon ${delivery.deliveryNoteNumber} :',
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextFormField(
+              controller: reasonController,
+              maxLines: 3,
+              autofocus: true,
+              decoration: InputDecoration(
+                hintText: 'Ex : Client absent, report demandé, accès fermé...',
+                hintStyle: const TextStyle(
+                  fontSize: 12,
+                  color: AppColors.textSecondary,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                contentPadding: const EdgeInsets.all(12),
+              ),
+              validator: (val) {
+                if (val == null || val.trim().isEmpty) {
+                  return 'Veuillez saisir un motif';
+                }
+                return null;
+              },
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(dialogCtx).pop(false),
+          child: const Text(
+            'Annuler',
+            style: TextStyle(color: AppColors.textSecondary),
+          ),
+        ),
+        ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.warning,
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+          onPressed: () {
+            if (formKey.currentState!.validate()) {
+              Navigator.of(dialogCtx).pop(true);
+            }
+          },
+          child: const Text('Confirmer le report'),
+        ),
+      ],
+    ),
+  );
+
+  if (confirmed == true && context.mounted) {
+    final reason = reasonController.text.trim();
+    context.read<DeliveryCubit>().reportFailure(delivery, reason: reason);
+  }
+}
+
+// ─── Modale de sélection du mode de validation (Direct vs Signature) ─────────
+Future<void> _showValidationChoiceModal(
+  BuildContext context,
+  Delivery delivery,
+) async {
+  final blClean = delivery.deliveryNoteNumber.replaceFirst('BL-', '').trim();
+
+  await showModalBottomSheet<void>(
+    context: context,
+    backgroundColor: Colors.white,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+    ),
+    builder: (modalCtx) {
+      return SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Poignée de glissement
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFCBD5E1),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.primarySoft,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      AppIcons.checkCircle,
+                      color: AppColors.primary,
+                      size: 22,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Validation — BL $blClean',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        const Text(
+                          'Choisissez le mode de validation pour cette course :',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+
+              // Option 1 : Validation directe (sans signature)
+              InkWell(
+                onTap: () async {
+                  Navigator.of(modalCtx).pop();
+                  final confirmed =
+                      await AppDialogs.showDeliveryConfirmationDialog(
+                        context,
+                        blNumber: blClean,
+                      );
+                  if (confirmed && context.mounted) {
+                    context.read<DeliveryCubit>().validateDelivery(delivery);
+                  }
+                },
+                borderRadius: BorderRadius.circular(14),
+                child: Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                        child: const Icon(
+                          AppIcons.check,
+                          color: AppColors.success,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: const [
+                            Text(
+                              'Option 1 : Validation directe',
+                              style: TextStyle(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            SizedBox(height: 2),
+                            Text(
+                              'Validation immédiate sans signature (visa automatique)',
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(
+                        AppIcons.arrowRight,
+                        size: 16,
+                        color: AppColors.textSecondary,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+
+              // Option 2 : Émargement tactile client (Démo V2)
+              InkWell(
+                onTap: () async {
+                  Navigator.of(modalCtx).pop();
+                  final sigResult = await SignaturePadDialog.show(
+                    context,
+                    blNumber: 'BL-$blClean',
+                    initialClientName: delivery.clientName,
+                  );
+                  if (sigResult != null && context.mounted) {
+                    context.read<DeliveryCubit>().validateDelivery(
+                      delivery,
+                      signedBy: sigResult.signedBy,
+                      signatureData: sigResult.signatureData,
+                    );
+                  }
+                },
+                borderRadius: BorderRadius.circular(14),
+                child: Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: AppColors.primarySoft,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: AppColors.primary.withValues(alpha: 0.4),
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(
+                          AppIcons.edit,
+                          color: AppColors.primary,
+                          size: 20,
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Text(
+                                  'Option 2 : Faire signer le client',
+                                  style: TextStyle(
+                                    fontSize: 13.5,
+                                    fontWeight: FontWeight.w800,
+                                    color: AppColors.primaryDark,
+                                  ),
+                                ),
+                                const SizedBox(width: 6),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 1.5,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primary,
+                                    borderRadius: BorderRadius.circular(4),
+                                  ),
+                                  child: const Text(
+                                    'DÉMO V2',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 8.5,
+                                      fontWeight: FontWeight.w900,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 2),
+                            const Text(
+                              'Émargement tactile au doigt/stylet intégré au PDF',
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                color: AppColors.primaryDark,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(
+                        AppIcons.arrowRight,
+                        size: 16,
+                        color: AppColors.primary,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
 }
 
 // ─── Barre d'actions sticky ───────────────────────────────────────────────────
@@ -565,10 +983,11 @@ class _StickyActionBar extends StatelessWidget {
       builder: (context, state) {
         final isLoading = state is DeliveryUpdating;
 
-        if (delivery.status == DeliveryStatus.delivered ||
-            delivery.status == DeliveryStatus.cancelled) {
+        if (delivery.status == DeliveryStatus.delivered) {
           return const SizedBox.shrink();
         }
+
+        final canReprogram = delivery.status != DeliveryStatus.cancelled;
 
         return Container(
           padding: EdgeInsets.fromLTRB(
@@ -587,13 +1006,39 @@ class _StickyActionBar extends StatelessWidget {
               ),
             ],
           ),
-          child: delivery.status == DeliveryStatus.pending
-              ? ElevatedButton.icon(
+          child: Row(
+            children: [
+              if (canReprogram) ...[
+                OutlinedButton.icon(
                   onPressed: isLoading
                       ? null
-                      : () => context.read<DeliveryCubit>().startDelivery(
-                          delivery,
-                        ),
+                      : () => _showReprogramDialog(context, delivery),
+                  icon: const Icon(AppIcons.alertTriangle, size: 17),
+                  label: const Text('Reprogrammer'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.warning,
+                    side: const BorderSide(
+                      color: AppColors.warning,
+                      width: 1.5,
+                    ),
+                    minimumSize: const Size(0, 54),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    textStyle: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+              ],
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: isLoading
+                      ? null
+                      : () => _showValidationChoiceModal(context, delivery),
                   icon: isLoading
                       ? const SizedBox(
                           width: 18,
@@ -603,76 +1048,26 @@ class _StickyActionBar extends StatelessWidget {
                             color: Colors.white,
                           ),
                         )
-                      : const Icon(AppIcons.play),
+                      : const Icon(AppIcons.checkCircle, size: 18),
                   label: Text(
-                    isLoading ? 'Démarrage...' : 'Démarrer la livraison',
+                    isLoading ? 'Validation...' : 'Valider la livraison',
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.navBarYellow,
-                    foregroundColor: AppColors.primaryDark,
-                    minimumSize: const Size(double.infinity, 54),
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size(0, 54),
                     textStyle: const TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: 15,
+                      fontSize: 14,
                     ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
                     ),
                   ),
-                )
-              : Row(
-                  children: [
-                    OutlinedButton.icon(
-                      onPressed: isLoading
-                          ? null
-                          : () => context.push(
-                              '/delivery-failure',
-                              extra: delivery,
-                            ),
-                      icon: const Icon(AppIcons.alertTriangle, size: 17),
-                      label: const Text('Signaler'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.error,
-                        side: const BorderSide(
-                          color: AppColors.error,
-                          width: 1.5,
-                        ),
-                        minimumSize: const Size(0, 54),
-                        padding: const EdgeInsets.symmetric(horizontal: 18),
-                        textStyle: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: isLoading
-                            ? null
-                            : () => context.push(
-                                '/delivery-validation',
-                                extra: delivery,
-                              ),
-                        icon: const Icon(AppIcons.checkCircle, size: 18),
-                        label: const Text('Confirmer comme Livré'),
-                        style: ElevatedButton.styleFrom(
-                          minimumSize: const Size(0, 54),
-                          textStyle: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
                 ),
+              ),
+            ],
+          ),
         );
       },
     );
@@ -682,27 +1077,37 @@ class _StickyActionBar extends StatelessWidget {
 // ─── Timeline de suivi de livraison ──────────────────────────────────────────
 class _CompactTimeline extends StatelessWidget {
   final DeliveryStatus status;
-  const _CompactTimeline({required this.status});
+  final DateTime? scheduledTime;
+  const _CompactTimeline({required this.status, this.scheduledTime});
 
   @override
   Widget build(BuildContext context) {
     if (status == DeliveryStatus.cancelled) {
+      final dateStr = scheduledTime != null
+          ? DateFormat('dd/MM/yyyy à HH:mm').format(scheduledTime!)
+          : null;
       return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         margin: const EdgeInsets.symmetric(horizontal: 16),
         decoration: BoxDecoration(
-          color: AppColors.errorSoft,
-          borderRadius: BorderRadius.circular(10),
+          color: AppColors.warningSoft,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.warning.withAlpha(80)),
         ),
         child: Row(
           children: [
-            const Icon(AppIcons.cancelled, color: AppColors.error, size: 16),
-            const SizedBox(width: 8),
-            const Text(
-              'Livraison annulée',
-              style: TextStyle(
-                color: AppColors.error,
-                fontWeight: FontWeight.w700,
+            const Icon(AppIcons.clock, color: AppColors.warning, size: 18),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                dateStr != null
+                    ? 'Livraison reprogrammée ($dateStr)'
+                    : 'Livraison reprogrammée',
+                style: const TextStyle(
+                  color: AppColors.warning,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
+                ),
               ),
             ),
           ],
@@ -743,26 +1148,26 @@ class _CompactTimeline extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 28,
-                height: 28,
+                width: 32,
+                height: 32,
                 decoration: BoxDecoration(
                   color: isActive ? AppColors.primary : AppColors.border,
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
                   steps[idx].$1,
-                  size: 14,
+                  size: 16,
                   color: isActive ? Colors.white : AppColors.textSecondary,
                 ),
               ),
-              const SizedBox(height: 2),
+              const SizedBox(height: 4),
               Text(
                 steps[idx].$2,
                 style: TextStyle(
-                  fontSize: 9,
+                  fontSize: 12,
                   fontWeight: current == idx
-                      ? FontWeight.w700
-                      : FontWeight.w500,
+                      ? FontWeight.w800
+                      : FontWeight.w600,
                   color: isActive ? AppColors.primary : AppColors.textSecondary,
                 ),
               ),

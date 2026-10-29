@@ -1,14 +1,23 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 // import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
+import 'core/network/token_manager.dart';
 import 'core/routing/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'core/di/injection.dart';
+import 'core/utils/app_feedback.dart';
+
 // import 'core/offline/offline.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Chargement des variables d'environnement (.env)
+  await dotenv.load(fileName: ".env");
 
   // Initialiser les données de localisation (nécessaire pour DateFormat avec locale)
   await initializeDateFormatting('fr_FR');
@@ -23,7 +32,7 @@ void main() async {
 }
 
 /// Initialise Hive et enregistre tous les adapters nécessaires.
-/// 
+///
 /// IMPORTANT : Cette fonction doit être appelée AVANT configureDependencies()
 /// car les modules DI ont besoin d'accéder aux boxes Hive.
 // Future<void> _initializeHive() async {
@@ -56,13 +65,49 @@ void main() async {
 //   debugPrint('   - ${HiveBoxes.history}: ${Hive.box<OfflineHistoryEntry>(HiveBoxes.history).length} entrées');
 // }
 
-class LdfMobileApp extends StatelessWidget {
+class LdfMobileApp extends StatefulWidget {
   const LdfMobileApp({super.key});
+
+  @override
+  State<LdfMobileApp> createState() => _LdfMobileAppState();
+}
+
+class _LdfMobileAppState extends State<LdfMobileApp> {
+  StreamSubscription<void>? _sessionSub;
+
+  @override
+  void initState() {
+    super.initState();
+    // Session invalidée par le serveur (HTTP 401) : retour à l'écran de connexion.
+    _sessionSub = getIt<TokenManager>().onSessionExpired.listen(
+      (_) => _onSessionExpired(),
+    );
+  }
+
+  void _onSessionExpired() {
+    AppRouter.router.go('/login');
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final context = AppRouter.rootContext;
+      if (context != null && context.mounted) {
+        AppFeedback.warning(
+          context,
+          'Votre session a expiré. Veuillez vous reconnecter.',
+          title: 'Session expirée',
+        );
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _sessionSub?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: 'LdF Igescom Mobile',
+      title: 'IGESCOM Mobile',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       routerConfig: AppRouter.router,

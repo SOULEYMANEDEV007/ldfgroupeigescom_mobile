@@ -41,9 +41,20 @@ import '../../features/delivery/domain/repositories/delivery_repository.dart'
 import '../../features/delivery/domain/usecases/update_delivery_status_usecase.dart'
     as _i289;
 import '../../features/delivery/presentation/bloc/delivery_cubit.dart' as _i235;
+import '../../features/history/data/datasources/history_mock_datasource.dart'
+    as _i850;
+import '../../features/history/data/repositories_impl/history_repository_impl.dart'
+    as _i402;
 import '../../features/history/domain/repositories/history_repository.dart'
     as _i142;
 import '../../features/history/presentation/bloc/history_cubit.dart' as _i674;
+import '../../features/profile/data/datasources/profile_remote_data_source.dart'
+    as _i847;
+import '../../features/profile/data/repositories/profile_repository_impl.dart'
+    as _i334;
+import '../../features/profile/domain/repositories/profile_repository.dart'
+    as _i894;
+import '../../features/profile/presentation/cubit/profile_cubit.dart' as _i36;
 import '../../features/tour/data/datasources/tour_remote_data_source.dart'
     as _i536;
 import '../../features/tour/data/repositories_impl/tour_repository_impl.dart'
@@ -56,6 +67,9 @@ import '../network/dio_client.dart' as _i667;
 import '../network/token_manager.dart' as _i374;
 import '../services/location_service.dart' as _i669;
 import 'register_module.dart' as _i291;
+
+const String _mock = 'mock';
+const String _real = 'real';
 
 extension GetItInjectableX on _i174.GetIt {
   // initializes the registration of main-scope dependencies inside of GetIt
@@ -70,27 +84,27 @@ extension GetItInjectableX on _i174.GetIt {
       () => registerModule.prefs,
       preResolve: true,
     );
-    gh.lazySingleton<_i669.LocationService>(() => _i669.LocationService());
-    gh.lazySingleton<_i536.TourRemoteDataSource>(
-      () => _i536.MockTourRemoteDataSourceImpl(),
+    gh.factory<_i850.HistoryMockDatasource>(
+      () => _i850.HistoryMockDatasource(),
     );
-    gh.lazySingleton<_i878.TourRepository>(
-      () => _i318.TourRepositoryImpl(gh<_i536.TourRemoteDataSource>()),
+    gh.lazySingleton<_i669.LocationService>(() => _i669.LocationService());
+    gh.lazySingleton<_i623.DeliveryRemoteDataSource>(
+      () => _i623.MockDeliveryRemoteDataSourceImpl(),
+      registerFor: {_mock},
     );
     gh.lazySingleton<_i258.DashboardRemoteDataSource>(
       () => _i258.MockDashboardRemoteDataSourceImpl(),
+      registerFor: {_mock},
     );
-    gh.lazySingleton<_i623.DeliveryRemoteDataSource>(
-      () => _i623.MockDeliveryRemoteDataSourceImpl(),
-    );
-    gh.lazySingleton<_i1007.DeliveryRepository>(
-      () => _i734.DeliveryRepositoryImpl(gh<_i623.DeliveryRemoteDataSource>()),
+    gh.lazySingleton<_i536.TourRemoteDataSource>(
+      () => _i536.MockTourRemoteDataSourceImpl(),
+      registerFor: {_mock},
     );
     gh.lazySingleton<_i374.TokenManager>(
       () => _i374.TokenManager(gh<_i460.SharedPreferences>()),
     );
-    gh.factory<_i869.GetToursUseCase>(
-      () => _i869.GetToursUseCase(gh<_i878.TourRepository>()),
+    gh.factory<_i142.HistoryRepository>(
+      () => _i402.HistoryRepositoryImpl(gh<_i850.HistoryMockDatasource>()),
     );
     gh.factory<_i674.HistoryCubit>(
       () => _i674.HistoryCubit(gh<_i142.HistoryRepository>()),
@@ -98,17 +112,44 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i908.AuthInterceptor>(
       () => _i908.AuthInterceptor(gh<_i374.TokenManager>()),
     );
-    gh.lazySingleton<_i107.AuthRemoteDataSource>(
-      () => _i107.MockAuthRemoteDataSourceImpl(gh<_i374.TokenManager>()),
-    );
-    gh.factory<_i289.UpdateDeliveryStatusUseCase>(
-      () => _i289.UpdateDeliveryStatusUseCase(gh<_i1007.DeliveryRepository>()),
-    );
-    gh.factory<_i235.DeliveryCubit>(
-      () => _i235.DeliveryCubit(gh<_i289.UpdateDeliveryStatusUseCase>()),
-    );
     gh.lazySingleton<_i361.Dio>(
       () => networkModule.getDio(gh<_i908.AuthInterceptor>()),
+    );
+    gh.lazySingleton<_i847.ProfileRemoteDataSource>(
+      () => _i847.ProfileRemoteDataSourceImpl(
+        gh<_i361.Dio>(),
+        gh<_i374.TokenManager>(),
+      ),
+    );
+    gh.lazySingleton<_i107.AuthRemoteDataSource>(
+      () => _i107.RealAuthRemoteDataSourceImpl(
+        gh<_i361.Dio>(),
+        gh<_i374.TokenManager>(),
+      ),
+      registerFor: {_real},
+    );
+    gh.lazySingleton<_i536.TourRemoteDataSource>(
+      () => _i536.RealTourRemoteDataSourceImpl(
+        gh<_i361.Dio>(),
+        gh<_i374.TokenManager>(),
+      ),
+      registerFor: {_real},
+    );
+    gh.lazySingleton<_i623.DeliveryRemoteDataSource>(
+      () => _i623.RealDeliveryRemoteDataSourceImpl(gh<_i361.Dio>()),
+      registerFor: {_real},
+    );
+    gh.lazySingleton<_i258.DashboardRemoteDataSource>(
+      () => _i258.RealDashboardRemoteDataSourceImpl(
+        gh<_i536.TourRemoteDataSource>(),
+      ),
+      registerFor: {_real},
+    );
+    gh.lazySingleton<_i878.TourRepository>(
+      () => _i318.TourRepositoryImpl(gh<_i536.TourRemoteDataSource>()),
+    );
+    gh.lazySingleton<_i894.ProfileRepository>(
+      () => _i334.ProfileRepositoryImpl(gh<_i847.ProfileRemoteDataSource>()),
     );
     gh.lazySingleton<_i665.DashboardRepository>(
       () =>
@@ -117,17 +158,38 @@ extension GetItInjectableX on _i174.GetIt {
     gh.factory<_i765.GetDashboardStatsUseCase>(
       () => _i765.GetDashboardStatsUseCase(gh<_i665.DashboardRepository>()),
     );
-    gh.factory<_i195.TourCubit>(
-      () => _i195.TourCubit(gh<_i869.GetToursUseCase>()),
-    );
     gh.lazySingleton<_i787.AuthRepository>(
-      () => _i710.AuthRepositoryImpl(gh<_i107.AuthRemoteDataSource>()),
+      () => _i710.AuthRepositoryImpl(
+        gh<_i107.AuthRemoteDataSource>(),
+        gh<_i374.TokenManager>(),
+      ),
+    );
+    gh.lazySingleton<_i1007.DeliveryRepository>(
+      () => _i734.DeliveryRepositoryImpl(gh<_i623.DeliveryRemoteDataSource>()),
     );
     gh.factory<_i58.DashboardCubit>(
       () => _i58.DashboardCubit(gh<_i765.GetDashboardStatsUseCase>()),
     );
+    gh.factory<_i869.GetToursUseCase>(
+      () => _i869.GetToursUseCase(gh<_i878.TourRepository>()),
+    );
+    gh.factory<_i36.ProfileCubit>(
+      () => _i36.ProfileCubit(
+        gh<_i894.ProfileRepository>(),
+        gh<_i374.TokenManager>(),
+      ),
+    );
     gh.factory<_i188.LoginUseCase>(
       () => _i188.LoginUseCase(gh<_i787.AuthRepository>()),
+    );
+    gh.factory<_i289.UpdateDeliveryStatusUseCase>(
+      () => _i289.UpdateDeliveryStatusUseCase(gh<_i1007.DeliveryRepository>()),
+    );
+    gh.factory<_i235.DeliveryCubit>(
+      () => _i235.DeliveryCubit(gh<_i289.UpdateDeliveryStatusUseCase>()),
+    );
+    gh.factory<_i195.TourCubit>(
+      () => _i195.TourCubit(gh<_i869.GetToursUseCase>()),
     );
     gh.factory<_i990.LoginBloc>(
       () => _i990.LoginBloc(gh<_i188.LoginUseCase>()),
