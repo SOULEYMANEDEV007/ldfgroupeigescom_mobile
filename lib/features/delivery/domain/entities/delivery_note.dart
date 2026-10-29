@@ -26,6 +26,15 @@ class DeliveryNote extends Equatable {
   final double? montArsi;
   final String? signedBy;
 
+  // ── Blocs récapitulatifs officiels IGESCOM ──
+  final double montantHtCumule;
+  final double totalTva;
+  final double montantTtc;
+  final double netAPayer;
+  final double tvaBase;
+  final double arsiBase;
+  final String? observationRegul;
+
   const DeliveryNote({
     required this.number,
     required this.generatedAt,
@@ -46,7 +55,19 @@ class DeliveryNote extends Equatable {
     this.montTva,
     this.montArsi,
     this.signedBy,
-  });
+    double? montantHtCumule,
+    double? totalTva,
+    double? montantTtc,
+    double? netAPayer,
+    double? tvaBase,
+    double? arsiBase,
+    this.observationRegul,
+  }) : montantHtCumule = montantHtCumule ?? totalAmount,
+       totalTva = totalTva ?? (montTva ?? 0.0),
+       montantTtc = montantTtc ?? (totalAmount + (montTva ?? 0.0)),
+       netAPayer = netAPayer ?? (totalAmount + (montTva ?? 0.0)),
+       tvaBase = tvaBase ?? totalAmount,
+       arsiBase = arsiBase ?? 0.0;
 
   @override
   List<Object?> get props => [
@@ -69,5 +90,12 @@ class DeliveryNote extends Equatable {
     montTva,
     montArsi,
     signedBy,
+    montantHtCumule,
+    totalTva,
+    montantTtc,
+    netAPayer,
+    tvaBase,
+    arsiBase,
+    observationRegul,
   ];
 }

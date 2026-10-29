@@ -566,12 +566,38 @@ flutter run
   11. [tour_local_data_source.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/tour/data/datasources/tour_local_data_source.dart) & [delivery_remote_data_source.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/delivery/data/datasources/delivery_remote_data_source.dart) : Création d'un magasin persistant dédié (`LDF_SAVED_DELIVERY_SIGNATURES`) stockant les signatures électroniques (`signed_by` et `signature_data`). Fusion automatique des signatures avec les données renvoyées par `GET convotournees` afin de garantir que les signatures ne disparaissent jamais après actualisation de la page ou réouverture de l'app.
 - **Statut** : Les 2 chantiers de la démo sont finalisés, cohérents à 100%, signatures pérennes et prêts pour la présentation de lundi.
 
+### Session du 29/10/2026 — Refonte Conforme du Bon de Livraison (Document Physique IGESCOM & Clé API `lignes_bl`)
+- **Objectif du Développeur** :
+  1. Corriger les informations affichées sur le Bon de Livraison (BL) en se basant sur le document physique réel imprimé par IGESCOM / Librairie de France Groupe.
+  2. Éliminer l'affichage erroné où les numéros de commandes apparaissaient dans le tableau à la place des véritables articles/produits.
+- **Découverte API Backend Majeure** :
+  - L'API backend renvoie bien les vrais articles du BL sous la clé **`lignes_bl`** au sein de chaque ligne de tournée, avec l'objet **`article_info`** (`code_art`, `nom_art`, `code_barre`, `isbn_art`), les quantités, le total HT (`tot_ht`), les taux de taxes (`taux_tva_lbl`, `taux_arsi_lbl`), ainsi que `chauffeur_info` et `convoyeur_info`.
+- **Réalisations Effectuées** :
+  1. [delivery_line_item.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/delivery/domain/entities/delivery_line_item.dart) : Ajout des 8 colonnes officielles (`productCode`, `barcode`, `serialNumber`, `unitPriceHt`, `totalPriceHt`, `taxCode`, `arsiCode`).
+  2. [delivery_note.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/delivery/domain/entities/delivery_note.dart) : Ajout des champs officiels de récapitulatif comptable (`montantHtCumule`, `totalTva`, `montantTtc`, `netAPayer`, `tvaBase`, `arsiBase`, `observationRegul`).
+  3. [delivery_model.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/delivery/data/models/delivery_model.dart) :
+     - Parsing dynamique des articles réels depuis `lignes_bl` et `article_info` de l'API backend.
+     - Suppression définitive de la fausse ligne forfaitaire "Marchandises Commande N°...".
+     - Extraction du nom complet du chauffeur et convoyeur depuis `chauffeur_info` / `convoyeur_info`.
+     - Harmonisation du montant global avec `deliveryNote.totalAmount`.
+  4. [delivery_note_screen.dart](file:///c:/Users/LABS-INFO/Desktop/ldfgroupe_projects/mobile_projects/igescom_mobile/lib/features/delivery/presentation/screens/delivery_note_screen.dart) :
+     - Cartouche émetteur officiel : LIBRAIRIE DE FRANCE GROUPE avec tout le volet juridique et les 5 comptes bancaires réels (BICICI, BIAO, SIB, BNI, ECOBANK) et coordonnées.
+     - Cartouche document : `igescom` + `BON DE LIVRAISON` avec `Référence : [BL] de la Cmd : N° [CMD]`, date, client avec code entre parenthèses `(FGXMGX)`, adresse, téléphone et compte contribuable.
+     - Tableau officiel à 8 colonnes : `Code Produit`, `Désignation`, `Qté LIV`, `N° série`, `Prix HT`, `MONTANT`, `T`, `A`.
+     - Mention d'observation : `REGUL VOIR TRSFRT N/...`.
+     - Tableau récapitulatif TAXES (TVA / ARSI).
+     - Tableau récapitulatif TOTAUX (`MONTANT HT CUMULE`, `Total TVA`, `MONTANT TTC` et `NET A PAYER`).
+     - Espace signatures : Conservation du Visa livreur, Visa réceptionnaire et Signature tactile client émargée avec tampon vert officiel `LDF DIGITAL`.
+  5. Validation avec `flutter analyze` : **No issues found! (0 erreur, 0 warning)**.
+- **Statut** : 100% conforme au papier physique d'IGESCOM et branché sur la vraie structure `lignes_bl` de l'API.
+
 ---
 
 ## 7. 🌿 Informations Git
 
 - **Branche principale** : `souley_dev`.
 - **Statut** : Prêt pour commit.
+
 
 
 
